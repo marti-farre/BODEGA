@@ -10,7 +10,7 @@ from peft import LoraConfig, TaskType, get_peft_model, PeftConfig, PeftModel
 from transformers import AutoTokenizer, DataCollatorWithPadding, AutoConfig, BitsAndBytesConfig
 from transformers import AutoModelForSequenceClassification
 from torch.utils.data import DataLoader
-from transformers import AdamW
+from torch.optim import AdamW
 from transformers import get_scheduler
 from tqdm.auto import tqdm
 
