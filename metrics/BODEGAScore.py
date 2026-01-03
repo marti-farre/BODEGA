@@ -1,3 +1,7 @@
+# Disable SSL verification for LAMBO download (expired certificate on server)
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 import OpenAttack
 import editdistance
 import numpy
