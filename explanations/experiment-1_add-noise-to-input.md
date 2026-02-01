@@ -145,6 +145,43 @@ Input Text
 
 ---
 
+## Multi-Attacker Results (PR2, BiLSTM)
+
+### Baseline Attack Success Rates (No Defense)
+
+| Attacker | Type | ASR | Semantic | Character | BODEGA |
+|----------|------|-----|----------|-----------|--------|
+| BERTattack | Word-level | 82.2% | 0.723 | 0.913 | 0.546 |
+| PWWS | Word-level | 87.3% | 0.739 | 0.895 | 0.587 |
+| DeepWordBug | Char-level | 46.9% | 0.548 | 0.952 | 0.248 |
+| Genetic | Word-level | 89.9% | 0.732 | 0.889 | 0.595 |
+
+### Defense Effectiveness (ASR with Defense)
+
+| Defense | BERTattack | PWWS | DeepWordBug | Genetic |
+|---------|------------|------|-------------|---------|
+| **Baseline** | 82.2% | 87.3% | 46.9% | 89.9% |
+| SpellCheck | 82.2% (0.0pp) | 87.3% (0.0pp) | **14.7% (-32.2pp)** | 87.7% (-2.2pp) |
+| char_masking@0.1 | 33.4% (-48.8pp) | 38.7% (-48.6pp) | 20.0% (-26.9pp) | 40.1% (-49.8pp) |
+| char_noise@0.1 | **18.0% (-64.2pp)** | **20.9% (-66.4pp)** | **10.8% (-36.1pp)** | **22.8% (-67.1pp)** |
+
+### Key Findings
+
+1. **SpellCheck is attack-specific**: Only effective against DeepWordBug (character-level), has no effect on word-level attacks (BERTattack, PWWS, Genetic)
+
+2. **char_noise@0.1 is most effective**: Reduces ASR by 64-67pp for word-level attacks, 36pp for DeepWordBug - but causes F1 collapse (see Clean Accuracy)
+
+3. **char_masking@0.1 is balanced**: Reduces ASR by ~49pp for word-level attacks with moderate utility cost (-6.5% accuracy)
+
+4. **Word-level attacks are more successful**: Baseline ASR of 82-90% vs 47% for character-level DeepWordBug
+
+5. **Defense recommendations**:
+   - For **character-level attacks**: Use SpellCheck (zero utility cost)
+   - For **word-level attacks**: Use char_masking@0.05-0.10 (best robustness-utility trade-off)
+   - Avoid char_noise despite high effectiveness (destroys F1 score)
+
+---
+
 ## Usage Examples
 
 ### Run Single Attack with Defense
@@ -177,10 +214,11 @@ python runs/eval_defense_accuracy.py PR2 BiLSTM data/PR2 data/PR2/BiLSTM-512.pth
 
 ## Next Steps
 
-1. Test with additional attackers (BERTattack, TextFooler, Genetic)
+1. ~~Test with additional attackers (BERTattack, PWWS, Genetic)~~ ✅ Done
 2. Evaluate on other tasks (FC, HN, RD, C19)
 3. Test with different victim models (BERT, Gemma)
 4. Implement adaptive defense strategies
+5. Investigate char_noise F1 collapse phenomenon
 
 ---
 

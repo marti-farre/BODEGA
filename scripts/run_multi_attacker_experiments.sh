@@ -5,7 +5,7 @@
 #
 # Tests all defense configurations against multiple attackers:
 #   - BERTattack (word-level, BERT-based)
-#   - TextFooler (word-level, synonym replacement)
+#   - PWWS (word-level, synonym replacement)
 #   - DeepWordBug (character-level, typos)
 #   - Genetic (word-level, genetic algorithm)
 #
@@ -41,7 +41,7 @@ OUT_DIR="results"
 DEFENSE_SEED=42
 
 # Attackers to test
-ATTACKERS=("BERTattack" "TextFooler" "DeepWordBug" "Genetic")
+ATTACKERS=("BERTattack" "PWWS" "DeepWordBug" "Genetic")
 
 # Defense configurations: "name:param"
 declare -a DEFENSE_CONFIGS=(
