@@ -7,7 +7,7 @@
 #   0. Clean accuracy evaluation (utility baseline)
 #   1. Baseline attack (no defense)
 #   2. Spellcheck defense
-#   3-6. Character dropout at 0.05, 0.10, 0.15, 0.20
+#   3-6. Character masking at 0.05, 0.10, 0.15, 0.20
 #   7-10. Character noise at 0.05, 0.10, 0.15, 0.20
 #
 # Usage:
@@ -78,29 +78,29 @@ python runs/attack.py "$TASK" "$TARGETED" "$ATTACK" "$VICTIM" \
     --defense spellcheck
 echo ""
 
-# 3-6. Character Dropout at various rates
-echo "[3/11] Running char_dropout at 0.05..."
+# 3-6. Character Masking at various rates
+echo "[3/11] Running char_masking at 0.05..."
 python runs/attack.py "$TASK" "$TARGETED" "$ATTACK" "$VICTIM" \
     "$DATA_PATH" "$MODEL_PATH" "$OUT_DIR" \
-    --defense char_dropout --defense_param 0.05 --defense_seed 42
+    --defense char_masking --defense_param 0.05 --defense_seed 42
 echo ""
 
-echo "[4/11] Running char_dropout at 0.10..."
+echo "[4/11] Running char_masking at 0.10..."
 python runs/attack.py "$TASK" "$TARGETED" "$ATTACK" "$VICTIM" \
     "$DATA_PATH" "$MODEL_PATH" "$OUT_DIR" \
-    --defense char_dropout --defense_param 0.10 --defense_seed 42
+    --defense char_masking --defense_param 0.10 --defense_seed 42
 echo ""
 
-echo "[5/11] Running char_dropout at 0.15..."
+echo "[5/11] Running char_masking at 0.15..."
 python runs/attack.py "$TASK" "$TARGETED" "$ATTACK" "$VICTIM" \
     "$DATA_PATH" "$MODEL_PATH" "$OUT_DIR" \
-    --defense char_dropout --defense_param 0.15 --defense_seed 42
+    --defense char_masking --defense_param 0.15 --defense_seed 42
 echo ""
 
-echo "[6/11] Running char_dropout at 0.20..."
+echo "[6/11] Running char_masking at 0.20..."
 python runs/attack.py "$TASK" "$TARGETED" "$ATTACK" "$VICTIM" \
     "$DATA_PATH" "$MODEL_PATH" "$OUT_DIR" \
-    --defense char_dropout --defense_param 0.20 --defense_seed 42
+    --defense char_masking --defense_param 0.20 --defense_seed 42
 echo ""
 
 # 7-10. Character Noise at various rates

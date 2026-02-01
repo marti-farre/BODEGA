@@ -48,7 +48,7 @@ model_path = pathlib.Path.home() / 'data' / 'BODEGA' / task / (victim_model + '-
 # Parse arguments - support both legacy positional args and new named args
 parser = argparse.ArgumentParser(description='BODEGA attack evaluation with optional defenses')
 parser.add_argument('--defense', type=str, default='none',
-                    help='Defense type: none, spellcheck, char_dropout, char_noise')
+                    help='Defense type: none, spellcheck, char_masking, char_noise')
 parser.add_argument('--defense_param', type=float, default=0.0,
                     help='Defense parameter (dropout_prob or noise_std)')
 parser.add_argument('--defense_seed', type=int, default=42,
@@ -196,7 +196,7 @@ with no_ssl_verify():
 # Run the attack
 print("Evaluating the attack...")
 RAW_FILE_NAME = f'raw_{task}_{targeted}_{attack}_{victim_model}{defense_suffix}.tsv'
-raw_path = out_dir / RAW_FILE_NAME if out_dir else None
+raw_path = None  # Don't save raw attack details (saves disk space)
 with no_ssl_verify():
     scorer = BODEGAScore(victim_device, task, align_sentences=True, semantic_scorer="BLEURT", raw_path=raw_path)
     attack_eval = OpenAttack.AttackEval(attacker, victim, language='english', metrics=[

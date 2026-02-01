@@ -2,7 +2,7 @@ from .preprocessing import (
     DefenseWrapper,
     SpellCheckDefense,
     CharacterNoiseDefense,
-    CharacterDropoutDefense,
+    CharacterMaskingDefense,
     IdentityDefense,
     get_defense
 )
@@ -11,7 +11,7 @@ __all__ = [
     'DefenseWrapper',
     'SpellCheckDefense',
     'CharacterNoiseDefense',
-    'CharacterDropoutDefense',
+    'CharacterMaskingDefense',
     'IdentityDefense',
     'get_defense'
 ]

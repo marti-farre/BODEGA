@@ -163,11 +163,14 @@ class SpellCheckDefense(DefenseWrapper):
 
 class CharacterNoiseDefense(DefenseWrapper):
     """
-    Defense that adds character-level noise to input text.
+    Defense that adds character-level noise to input text using homoglyphs.
 
     By randomly perturbing characters, this defense can disrupt adversarial
-    perturbations that rely on specific character patterns. Uses visually
-    similar character substitutions.
+    perturbations that rely on specific character patterns. Uses the homoglyphs
+    library to find visually similar Unicode characters across different scripts
+    (e.g., Cyrillic 'а' looks like Latin 'a').
+
+    Requires: pip install homoglyphs
     """
 
     def __init__(
@@ -180,88 +183,120 @@ class CharacterNoiseDefense(DefenseWrapper):
         super().__init__(victim, verbose)
         self.noise_std = noise_std
         self.rng = random.Random(seed)
+        self._homoglyphs = None
+        # Cache for homoglyph lookups to avoid repeated calls
+        self._cache = {}
+
+    @property
+    def homoglyphs(self):
+        """Lazy initialization of homoglyphs library."""
+        if self._homoglyphs is None:
+            try:
+                import homoglyphs as hg
+            except ImportError:
+                raise ImportError(
+                    "CharacterNoiseDefense requires homoglyphs library. "
+                    "Install with: pip install homoglyphs"
+                )
+            # Initialize with all character categories for maximum coverage
+            self._homoglyphs = hg.Homoglyphs(categories=hg.Categories.get_all())
+        return self._homoglyphs
+
+    def _get_alternatives(self, char: str) -> List[str]:
+        """Get visually similar alternatives for a character, with caching."""
+        if char in self._cache:
+            return self._cache[char]
+
+        try:
+            # Get all homoglyph combinations for this character
+            variants = self.homoglyphs.get_combinations(char)
+            # Filter out the original character
+            alternatives = [v for v in variants if v != char and len(v) == 1]
+            self._cache[char] = alternatives
+            return alternatives
+        except Exception:
+            # If lookup fails, return empty list
+            self._cache[char] = []
+            return []
 
     def defend_single(self, text: str) -> str:
         """
-        Apply character-level perturbation.
+        Apply character-level perturbation using homoglyphs.
 
-        Randomly substitutes characters with visually similar alternatives
+        Randomly substitutes characters with visually similar Unicode alternatives
         based on the noise_std probability.
         """
         if self.noise_std == 0.0:
             return text
 
-        # Character substitution maps (visually similar chars)
-        similar_chars = {
-            'a': ['@', 'à', 'á', 'ä'],
-            'e': ['è', 'é', 'ë', '3'],
-            'i': ['1', 'í', 'ì', '!'],
-            'o': ['0', 'ò', 'ó', 'ö'],
-            'u': ['ù', 'ú', 'ü'],
-            's': ['$', '5'],
-            'l': ['1', '|'],
-            't': ['+', '7'],
-        }
-
         result = []
         for char in text:
+            # Skip spaces and control characters
+            if char.isspace() or not char.isprintable():
+                result.append(char)
+                continue
+
             # Probability of perturbation scales with noise_std
-            if self.rng.random() < self.noise_std and char.lower() in similar_chars:
-                alternatives = similar_chars[char.lower()]
-                replacement = self.rng.choice(alternatives)
-                if char.isupper():
-                    replacement = replacement.upper()
-                result.append(replacement)
+            if self.rng.random() < self.noise_std:
+                alternatives = self._get_alternatives(char)
+                if alternatives:
+                    replacement = self.rng.choice(alternatives)
+                    result.append(replacement)
+                else:
+                    result.append(char)
             else:
                 result.append(char)
 
         return ''.join(result)
 
 
-class CharacterDropoutDefense(DefenseWrapper):
+class CharacterMaskingDefense(DefenseWrapper):
     """
-    Defense that randomly drops characters from input.
+    Defense that randomly masks (removes) characters from input.
 
     By randomly removing characters, this defense can disrupt adversarial
     perturbations that rely on specific character positions or sequences.
+
+    Note: This is called "masking" rather than "dropout" to distinguish it
+    from neural network dropout, which drops neurons during training.
     """
 
     def __init__(
         self,
         victim: OpenAttack.Classifier,
-        dropout_prob: float = 0.1,
+        masking_prob: float = 0.1,
         seed: Optional[int] = None,
         min_length: int = 10,
         verbose: bool = False
     ):
         super().__init__(victim, verbose)
-        self.dropout_prob = dropout_prob
+        self.masking_prob = masking_prob
         self.min_length = min_length
         self.rng = random.Random(seed)
 
     def defend_single(self, text: str) -> str:
-        """Randomly drop characters from text."""
-        if self.dropout_prob == 0.0:
+        """Randomly mask (remove) characters from text."""
+        if self.masking_prob == 0.0:
             return text
 
         if len(text) <= self.min_length:
             return text
 
-        # Calculate how many characters we can drop
-        max_drop = len(text) - self.min_length
+        # Calculate how many characters we can mask
+        max_mask = len(text) - self.min_length
 
         # Decide which characters to keep
         kept = []
-        dropped_count = 0
+        masked_count = 0
 
         for char in text:
             # Always keep spaces to maintain word boundaries
             if char == ' ':
                 kept.append(char)
-            elif self.rng.random() >= self.dropout_prob or dropped_count >= max_drop:
+            elif self.rng.random() >= self.masking_prob or masked_count >= max_mask:
                 kept.append(char)
             else:
-                dropped_count += 1
+                masked_count += 1
 
         return ''.join(kept)
 
@@ -287,9 +322,9 @@ def get_defense(
     Factory function to create defense wrappers.
 
     Args:
-        defense_name: Type of defense ('none', 'spellcheck', 'char_noise', 'char_dropout', 'identity')
+        defense_name: Type of defense ('none', 'spellcheck', 'char_noise', 'char_masking', 'identity')
         victim: The classifier to wrap
-        param: Defense parameter (noise_std for char_noise, dropout_prob for char_dropout)
+        param: Defense parameter (noise_std for char_noise, masking_prob for char_masking)
         seed: Random seed for reproducibility
         verbose: Whether to print modifications
 
@@ -304,10 +339,10 @@ def get_defense(
         return SpellCheckDefense(victim, verbose=verbose)
     elif defense_name == 'char_noise':
         return CharacterNoiseDefense(victim, noise_std=param, seed=seed, verbose=verbose)
-    elif defense_name == 'char_dropout':
-        return CharacterDropoutDefense(victim, dropout_prob=param, seed=seed, verbose=verbose)
+    elif defense_name == 'char_masking':
+        return CharacterMaskingDefense(victim, masking_prob=param, seed=seed, verbose=verbose)
     elif defense_name == 'identity':
         return IdentityDefense(victim, verbose=verbose)
     else:
         raise ValueError(f"Unknown defense: {defense_name}. "
-                        f"Available: none, spellcheck, char_noise, char_dropout, identity")
+                        f"Available: none, spellcheck, char_noise, char_masking, identity")
