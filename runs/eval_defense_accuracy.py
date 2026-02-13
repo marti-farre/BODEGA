@@ -40,6 +40,11 @@ DEFENSE_CONFIGS = [
     ('char_noise', 0.10),
     ('char_noise', 0.15),
     ('char_noise', 0.20),
+    # Survey-based defenses
+    ('unicode', 0.0),
+    ('majority_vote', 3),
+    ('majority_vote', 5),
+    ('majority_vote', 7),
 ]
 
 DEFENSE_SEED = 42

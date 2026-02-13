@@ -311,6 +311,313 @@ class IdentityDefense(DefenseWrapper):
         return text
 
 
+class UnicodeCanonicalizationDefense(DefenseWrapper):
+    """
+    Defense that normalizes Unicode text to remove adversarial artifacts.
+
+    Character-level adversarial attacks often exploit Unicode features:
+    - Homoglyphs: visually similar chars from different scripts (Cyrillic 'а' vs Latin 'a')
+    - Zero-width characters: invisible chars like ZWSP (U+200B)
+    - Confusables: characters that look similar but have different code points
+
+    This defense counters these by:
+    1. Removing zero-width and invisible characters
+    2. Applying NFKC Unicode normalization
+    3. Mapping common confusables to ASCII equivalents
+
+    Based on: Bhalerao et al. "Data-driven mitigation of adversarial text perturbation"
+    Survey reference: Section 5.1.2 - Perturbation Correction
+    """
+
+    # Zero-width and invisible characters to remove
+    ZERO_WIDTH_CHARS = {
+        '\u200b',  # Zero Width Space (ZWSP)
+        '\u200c',  # Zero Width Non-Joiner (ZWNJ)
+        '\u200d',  # Zero Width Joiner (ZWJ)
+        '\u200e',  # Left-to-Right Mark
+        '\u200f',  # Right-to-Left Mark
+        '\u2060',  # Word Joiner
+        '\u2061',  # Function Application
+        '\u2062',  # Invisible Times
+        '\u2063',  # Invisible Separator
+        '\u2064',  # Invisible Plus
+        '\ufeff',  # Byte Order Mark / Zero Width No-Break Space
+        '\u00ad',  # Soft Hyphen
+        '\u034f',  # Combining Grapheme Joiner
+        '\u061c',  # Arabic Letter Mark
+        '\u115f',  # Hangul Choseong Filler
+        '\u1160',  # Hangul Jungseong Filler
+        '\u17b4',  # Khmer Vowel Inherent Aq
+        '\u17b5',  # Khmer Vowel Inherent Aa
+        '\u180e',  # Mongolian Vowel Separator
+        '\u2800',  # Braille Pattern Blank
+        '\u3164',  # Hangul Filler
+        '\uffa0',  # Halfwidth Hangul Filler
+    }
+
+    # Common confusable mappings (homoglyphs to ASCII)
+    # Based on Unicode confusables.txt and common attack patterns
+    CONFUSABLES_MAP = {
+        # Cyrillic lowercase confusables
+        '\u0430': 'a',  # Cyrillic small a
+        '\u0435': 'e',  # Cyrillic small ie
+        '\u0456': 'i',  # Cyrillic small byelorussian-ukrainian i
+        '\u043e': 'o',  # Cyrillic small o
+        '\u0440': 'p',  # Cyrillic small er
+        '\u0441': 'c',  # Cyrillic small es
+        '\u0443': 'y',  # Cyrillic small u
+        '\u0445': 'x',  # Cyrillic small ha
+        '\u0455': 's',  # Cyrillic small dze
+        '\u0458': 'j',  # Cyrillic small je
+        # Cyrillic uppercase confusables
+        '\u0410': 'A',  # Cyrillic capital A
+        '\u0412': 'B',  # Cyrillic capital Ve
+        '\u0415': 'E',  # Cyrillic capital Ie
+        '\u041a': 'K',  # Cyrillic capital Ka
+        '\u041c': 'M',  # Cyrillic capital Em
+        '\u041d': 'H',  # Cyrillic capital En
+        '\u041e': 'O',  # Cyrillic capital O
+        '\u0420': 'P',  # Cyrillic capital Er
+        '\u0421': 'C',  # Cyrillic capital Es
+        '\u0422': 'T',  # Cyrillic capital Te
+        '\u0425': 'X',  # Cyrillic capital Ha
+        # Greek confusables
+        '\u03b1': 'a',  # Greek small alpha
+        '\u03b5': 'e',  # Greek small epsilon
+        '\u03b9': 'i',  # Greek small iota
+        '\u03bf': 'o',  # Greek small omicron
+        '\u03c1': 'p',  # Greek small rho
+        '\u03c5': 'u',  # Greek small upsilon
+        '\u0391': 'A',  # Greek capital Alpha
+        '\u0392': 'B',  # Greek capital Beta
+        '\u0395': 'E',  # Greek capital Epsilon
+        '\u0397': 'H',  # Greek capital Eta
+        '\u0399': 'I',  # Greek capital Iota
+        '\u039a': 'K',  # Greek capital Kappa
+        '\u039c': 'M',  # Greek capital Mu
+        '\u039d': 'N',  # Greek capital Nu
+        '\u039f': 'O',  # Greek capital Omicron
+        '\u03a1': 'P',  # Greek capital Rho
+        '\u03a4': 'T',  # Greek capital Tau
+        '\u03a7': 'X',  # Greek capital Chi
+        '\u03a5': 'Y',  # Greek capital Upsilon
+        '\u0396': 'Z',  # Greek capital Zeta
+        # Various typographic symbols
+        '\u2010': '-',  # Hyphen
+        '\u2011': '-',  # Non-breaking hyphen
+        '\u2012': '-',  # Figure dash
+        '\u2013': '-',  # En dash
+        '\u2014': '-',  # Em dash
+        '\u2015': '-',  # Horizontal bar
+        '\u2018': "'",  # Left single quotation mark
+        '\u2019': "'",  # Right single quotation mark
+        '\u201a': "'",  # Single low-9 quotation mark
+        '\u201b': "'",  # Single high-reversed-9 quotation mark
+        '\u201c': '"',  # Left double quotation mark
+        '\u201d': '"',  # Right double quotation mark
+        '\u201e': '"',  # Double low-9 quotation mark
+        '\u201f': '"',  # Double high-reversed-9 quotation mark
+        '\u2032': "'",  # Prime
+        '\u2033': '"',  # Double prime
+        '\u2039': '<',  # Single left-pointing angle quotation mark
+        '\u203a': '>',  # Single right-pointing angle quotation mark
+        '\u00ab': '"',  # Left-pointing double angle quotation mark
+        '\u00bb': '"',  # Right-pointing double angle quotation mark
+        # Fullwidth characters to ASCII
+        '\uff01': '!',  # Fullwidth exclamation mark
+        '\uff1f': '?',  # Fullwidth question mark
+        '\uff0e': '.',  # Fullwidth full stop
+        '\uff0c': ',',  # Fullwidth comma
+        # Mathematical and other symbols
+        '\u2212': '-',  # Minus sign
+        '\u00d7': 'x',  # Multiplication sign
+        '\u2217': '*',  # Asterisk operator
+        '\u2219': '.',  # Bullet operator
+        '\u00b7': '.',  # Middle dot
+    }
+
+    def __init__(
+        self,
+        victim: OpenAttack.Classifier,
+        normalize_form: str = 'NFKC',
+        remove_zero_width: bool = True,
+        map_confusables: bool = True,
+        verbose: bool = False
+    ):
+        """
+        Initialize Unicode canonicalization defense.
+
+        Args:
+            victim: The classifier to wrap
+            normalize_form: Unicode normalization form ('NFC', 'NFKC', 'NFD', 'NFKD')
+                           NFKC is recommended as it handles compatibility characters
+            remove_zero_width: Whether to remove zero-width invisible characters
+            map_confusables: Whether to map confusable characters to ASCII
+            verbose: Whether to print modifications
+        """
+        super().__init__(victim, verbose)
+        self.normalize_form = normalize_form
+        self.remove_zero_width = remove_zero_width
+        self.map_confusables = map_confusables
+
+    def defend_single(self, text: str) -> str:
+        """Apply Unicode canonicalization to text."""
+        import unicodedata
+
+        result = text
+
+        # Step 1: Remove zero-width and invisible characters
+        if self.remove_zero_width:
+            result = ''.join(c for c in result if c not in self.ZERO_WIDTH_CHARS)
+
+        # Step 2: Apply Unicode normalization
+        # NFKC: Compatibility decomposition + canonical composition
+        # This handles ligatures, fullwidth chars, etc.
+        result = unicodedata.normalize(self.normalize_form, result)
+
+        # Step 3: Map confusable characters to ASCII equivalents
+        if self.map_confusables:
+            result = ''.join(self.CONFUSABLES_MAP.get(c, c) for c in result)
+
+        return result
+
+
+class MajorityVoteDefense(DefenseWrapper):
+    """
+    Defense that creates perturbed copies of input and uses majority voting.
+
+    For each input text:
+    1. Create N perturbed copies using random character-level perturbations
+    2. Classify each copy with the victim model
+    3. Return the majority vote prediction (as probability distribution)
+
+    This defense exploits the fact that adversarial perturbations are often
+    fragile to additional small random changes. By voting across multiple
+    perturbed versions, we can "vote out" the adversarial effect.
+
+    IMPORTANT: This defense overrides get_prob() directly (not just defend_single)
+    because it needs to query the victim model multiple times and aggregate results.
+
+    Based on: Swenor & Kalita "Using random perturbations to mitigate adversarial attacks"
+    Survey reference: Section 5.1.1 - Perturbation Identification
+    """
+
+    def __init__(
+        self,
+        victim: OpenAttack.Classifier,
+        num_copies: int = 5,
+        perturbation_prob: float = 0.1,
+        aggregation: str = 'hard',
+        seed: Optional[int] = None,
+        verbose: bool = False
+    ):
+        """
+        Initialize majority vote defense.
+
+        Args:
+            victim: The classifier to wrap
+            num_copies: Number of perturbed copies to create (odd numbers preferred for voting)
+            perturbation_prob: Probability of perturbing each character
+            aggregation: Voting method - 'hard' (count predictions) or 'soft' (average probs)
+            seed: Random seed for reproducibility
+            verbose: Whether to print modifications
+        """
+        super().__init__(victim, verbose)
+        self.num_copies = num_copies
+        self.perturbation_prob = perturbation_prob
+        self.aggregation = aggregation
+        self.rng = random.Random(seed)
+
+    def get_prob(self, input_: List[str]) -> np.ndarray:
+        """
+        Override get_prob to implement majority voting.
+
+        Instead of transforming input once, we:
+        1. Generate num_copies perturbed versions of each input
+        2. Get predictions for all versions
+        3. Aggregate via majority vote (hard or soft)
+        """
+        all_probs = []
+
+        for i in range(self.num_copies):
+            # Generate perturbed copy (using parent's apply_defense for text pair handling)
+            perturbed_input = self.apply_defense(input_)
+            # Get probabilities from victim
+            probs = self.victim.get_prob(perturbed_input)
+            all_probs.append(probs)
+
+        # Stack: shape (num_copies, batch_size, num_classes)
+        all_probs = np.stack(all_probs, axis=0)
+
+        if self.aggregation == 'hard':
+            # Hard voting: count predictions and convert to probability distribution
+            predictions = all_probs.argmax(axis=2)  # (num_copies, batch_size)
+            batch_size = predictions.shape[1]
+            num_classes = all_probs.shape[2]
+            result = np.zeros((batch_size, num_classes))
+
+            for sample_idx in range(batch_size):
+                votes = predictions[:, sample_idx]
+                for class_idx in range(num_classes):
+                    result[sample_idx, class_idx] = np.sum(votes == class_idx) / self.num_copies
+
+            return result
+        else:  # soft voting
+            # Soft voting: average probabilities across all copies
+            return np.mean(all_probs, axis=0)
+
+    def defend_single(self, text: str) -> str:
+        """
+        Apply random perturbation to a single text.
+
+        Perturbation types:
+        - Delete: Remove a character
+        - Swap: Swap adjacent characters
+        - Insert: Insert a random character
+        """
+        if self.perturbation_prob == 0.0:
+            return text
+
+        result = []
+        i = 0
+        while i < len(text):
+            char = text[i]
+
+            # Always preserve spaces to maintain word boundaries
+            if char.isspace():
+                result.append(char)
+                i += 1
+                continue
+
+            if self.rng.random() < self.perturbation_prob:
+                # Choose a random perturbation
+                perturbation = self.rng.choice(['delete', 'swap', 'insert'])
+
+                if perturbation == 'delete':
+                    # Skip this character (delete it)
+                    i += 1
+                    continue
+                elif perturbation == 'swap' and i < len(text) - 1 and not text[i + 1].isspace():
+                    # Swap with next character
+                    result.append(text[i + 1])
+                    result.append(char)
+                    i += 2
+                    continue
+                elif perturbation == 'insert':
+                    # Insert a random lowercase letter before current char
+                    random_char = chr(self.rng.randint(ord('a'), ord('z')))
+                    result.append(random_char)
+                    result.append(char)
+                    i += 1
+                    continue
+
+            # Default: keep the character as-is
+            result.append(char)
+            i += 1
+
+        return ''.join(result)
+
+
 def get_defense(
     defense_name: str,
     victim: OpenAttack.Classifier,
@@ -322,9 +629,11 @@ def get_defense(
     Factory function to create defense wrappers.
 
     Args:
-        defense_name: Type of defense ('none', 'spellcheck', 'char_noise', 'char_masking', 'identity')
+        defense_name: Type of defense ('none', 'spellcheck', 'char_noise', 'char_masking',
+                      'identity', 'unicode', 'majority_vote')
         victim: The classifier to wrap
-        param: Defense parameter (noise_std for char_noise, masking_prob for char_masking)
+        param: Defense parameter (noise_std for char_noise, masking_prob for char_masking,
+               num_copies for majority_vote)
         seed: Random seed for reproducibility
         verbose: Whether to print modifications
 
@@ -343,6 +652,12 @@ def get_defense(
         return CharacterMaskingDefense(victim, masking_prob=param, seed=seed, verbose=verbose)
     elif defense_name == 'identity':
         return IdentityDefense(victim, verbose=verbose)
+    elif defense_name == 'unicode' or defense_name == 'unicode_canonicalization':
+        return UnicodeCanonicalizationDefense(victim, verbose=verbose)
+    elif defense_name == 'majority_vote' or defense_name == 'vote':
+        num_copies = int(param) if param > 0 else 5
+        return MajorityVoteDefense(victim, num_copies=num_copies, seed=seed, verbose=verbose)
     else:
         raise ValueError(f"Unknown defense: {defense_name}. "
-                        f"Available: none, spellcheck, char_noise, char_masking, identity")
+                        f"Available: none, spellcheck, char_noise, char_masking, identity, "
+                        f"unicode, majority_vote")

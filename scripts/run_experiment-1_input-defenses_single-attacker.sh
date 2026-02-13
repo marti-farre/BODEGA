@@ -32,7 +32,7 @@ ATTACK="DeepWordBug"
 VICTIM="BiLSTM"
 DATA_PATH="data/PR2"
 MODEL_PATH="data/PR2/BiLSTM-512.pth"
-OUT_DIR="results"
+OUT_DIR="results/experiment-1_add-noise-to-input"
 
 # Create output directory
 mkdir -p "$OUT_DIR"

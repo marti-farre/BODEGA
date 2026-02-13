@@ -4,6 +4,8 @@ from .preprocessing import (
     CharacterNoiseDefense,
     CharacterMaskingDefense,
     IdentityDefense,
+    UnicodeCanonicalizationDefense,
+    MajorityVoteDefense,
     get_defense
 )
 
@@ -13,5 +15,7 @@ __all__ = [
     'CharacterNoiseDefense',
     'CharacterMaskingDefense',
     'IdentityDefense',
+    'UnicodeCanonicalizationDefense',
+    'MajorityVoteDefense',
     'get_defense'
 ]

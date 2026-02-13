@@ -37,7 +37,7 @@ TARGETED="false"
 VICTIM="BiLSTM"
 DATA_PATH="data/PR2"
 MODEL_PATH="data/PR2/BiLSTM-512.pth"
-OUT_DIR="results"
+OUT_DIR="results/experiment-1_add-noise-to-input"
 DEFENSE_SEED=42
 
 # Attackers to test
