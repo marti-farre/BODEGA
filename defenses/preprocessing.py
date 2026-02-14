@@ -618,6 +618,175 @@ class MajorityVoteDefense(DefenseWrapper):
         return ''.join(result)
 
 
+# =============================================================================
+# OUTPUT PERTURBATION DEFENSES (Experiment 2)
+# =============================================================================
+# Unlike input defenses that transform text BEFORE classification,
+# output defenses perturb the OUTPUT (probabilities/labels) returned by the model.
+# This can disturb how attacker models learn from the defender's responses.
+
+
+class OutputDefenseWrapper(OpenAttack.Classifier, ABC):
+    """
+    Base class for OUTPUT perturbation defenses.
+
+    Unlike DefenseWrapper (which transforms INPUT), this intercepts and perturbs
+    the OUTPUT from the victim model. Useful for:
+    - Confusing attacker learning signals
+    - Making decision boundaries fuzzy
+    - Obscuring true confidence levels
+    """
+
+    def __init__(
+        self,
+        victim: OpenAttack.Classifier,
+        seed: Optional[int] = None,
+        verbose: bool = False
+    ):
+        self.victim = victim
+        self.rng = random.Random(seed)
+        self.np_rng = np.random.RandomState(seed)
+        self.verbose = verbose
+        self.perturbation_log = []  # Track perturbations for analysis
+
+    @abstractmethod
+    def perturb_prob(self, probs: np.ndarray) -> np.ndarray:
+        """Perturb probability output. Override in subclasses."""
+        pass
+
+    def get_prob(self, input_: List[str]) -> np.ndarray:
+        probs = self.victim.get_prob(input_)
+        perturbed = self.perturb_prob(probs)
+        return perturbed
+
+    def get_pred(self, input_: List[str]) -> np.ndarray:
+        return self.get_prob(input_).argmax(axis=1)
+
+    def finalise(self):
+        if hasattr(self.victim, 'finalise'):
+            self.victim.finalise()
+
+
+class LabelFlippingDefense(OutputDefenseWrapper):
+    """
+    Exp 2a: Flip output label with probability P(ε).
+
+    Introduces noise into the attacker's reward signal, making it harder
+    to learn which perturbations are effective. The attacker sees inconsistent
+    feedback for the same or similar inputs.
+
+    Note: This affects BOTH get_pred() and get_prob() to maintain consistency.
+    When a flip occurs, probabilities are swapped (P(0), P(1)) → (P(1), P(0)).
+    """
+
+    def __init__(
+        self,
+        victim: OpenAttack.Classifier,
+        flip_prob: float = 0.1,
+        seed: Optional[int] = None,
+        verbose: bool = False
+    ):
+        super().__init__(victim, seed, verbose)
+        self.flip_prob = flip_prob
+
+    def perturb_prob(self, probs: np.ndarray) -> np.ndarray:
+        """Flip probabilities with probability flip_prob."""
+        result = probs.copy()
+        for i in range(len(result)):
+            if self.rng.random() < self.flip_prob:
+                # Swap class probabilities: [P(0), P(1)] → [P(1), P(0)]
+                result[i] = result[i][::-1]
+                if self.verbose:
+                    print(f"[LABEL_FLIP] Sample {i}: flipped probs {probs[i]} → {result[i]}")
+        return result
+
+
+class RandomThresholdDefense(OutputDefenseWrapper):
+    """
+    Exp 2b: Random decision threshold.
+
+    Instead of using a fixed 0.5 threshold for binary classification,
+    samples a random threshold from [0.5-ε, 0.5+ε] for each query.
+
+    This makes the decision boundary fuzzy, so attackers can't precisely
+    target it. Samples near the boundary get inconsistent labels.
+
+    Note: This ONLY affects get_pred(), not get_prob(). The probabilities
+    remain unchanged, but the prediction derived from them varies.
+    """
+
+    def __init__(
+        self,
+        victim: OpenAttack.Classifier,
+        threshold_range: float = 0.1,
+        seed: Optional[int] = None,
+        verbose: bool = False
+    ):
+        super().__init__(victim, seed, verbose)
+        self.threshold_range = threshold_range
+
+    def perturb_prob(self, probs: np.ndarray) -> np.ndarray:
+        """Probabilities unchanged for random threshold defense."""
+        return probs
+
+    def get_pred(self, input_: List[str]) -> np.ndarray:
+        """Override get_pred to use random threshold."""
+        probs = self.victim.get_prob(input_)
+        preds = np.zeros(len(probs), dtype=int)
+        for i in range(len(probs)):
+            # Random threshold per sample
+            threshold = 0.5 + self.rng.uniform(-self.threshold_range, self.threshold_range)
+            # Assuming binary classification with P(class=1) at index 1
+            preds[i] = 1 if probs[i, 1] >= threshold else 0
+            if self.verbose and abs(probs[i, 1] - 0.5) < self.threshold_range:
+                print(f"[RAND_THRESH] Sample {i}: P(1)={probs[i,1]:.3f}, thresh={threshold:.3f}, pred={preds[i]}")
+        return preds
+
+
+class ConfidencePerturbationDefense(OutputDefenseWrapper):
+    """
+    Exp 2c: Add Gaussian noise to output probabilities.
+
+    Obscures true confidence levels by adding random noise to the
+    probability distribution, then renormalizing. This can help against
+    gradient-based attacks that rely on precise probability estimates.
+
+    The noise is clipped and renormalized to maintain valid probabilities.
+    """
+
+    def __init__(
+        self,
+        victim: OpenAttack.Classifier,
+        noise_std: float = 0.1,
+        seed: Optional[int] = None,
+        verbose: bool = False
+    ):
+        super().__init__(victim, seed, verbose)
+        self.noise_std = noise_std
+
+    def perturb_prob(self, probs: np.ndarray) -> np.ndarray:
+        """Add Gaussian noise to probabilities and renormalize."""
+        if self.noise_std == 0.0:
+            return probs
+
+        # Add Gaussian noise
+        noise = self.np_rng.normal(0, self.noise_std, probs.shape)
+        perturbed = probs + noise
+
+        # Clip to valid probability range (small epsilon to avoid division issues)
+        perturbed = np.clip(perturbed, 0.01, 0.99)
+
+        # Renormalize to sum to 1
+        perturbed = perturbed / perturbed.sum(axis=1, keepdims=True)
+
+        if self.verbose:
+            for i in range(len(probs)):
+                if not np.allclose(probs[i], perturbed[i], atol=0.01):
+                    print(f"[CONF_NOISE] Sample {i}: {probs[i]} → {perturbed[i]}")
+
+        return perturbed
+
+
 def get_defense(
     defense_name: str,
     victim: OpenAttack.Classifier,
@@ -629,11 +798,21 @@ def get_defense(
     Factory function to create defense wrappers.
 
     Args:
-        defense_name: Type of defense ('none', 'spellcheck', 'char_noise', 'char_masking',
-                      'identity', 'unicode', 'majority_vote')
+        defense_name: Type of defense. Available options:
+            Input defenses (Exp 1):
+                - 'none': No defense (baseline)
+                - 'spellcheck': Correct spelling errors
+                - 'char_noise': Add character-level noise using homoglyphs
+                - 'char_masking': Randomly remove characters
+                - 'identity': No-op (useful for testing)
+                - 'unicode': Unicode canonicalization
+                - 'majority_vote': Majority voting over perturbed copies
+            Output defenses (Exp 2):
+                - 'label_flip': Flip output label with probability P(param)
+                - 'random_threshold': Random decision threshold
+                - 'confidence_noise': Add Gaussian noise to probabilities
         victim: The classifier to wrap
-        param: Defense parameter (noise_std for char_noise, masking_prob for char_masking,
-               num_copies for majority_vote)
+        param: Defense parameter (meaning depends on defense type)
         seed: Random seed for reproducibility
         verbose: Whether to print modifications
 
@@ -642,8 +821,11 @@ def get_defense(
     """
     defense_name = defense_name.lower()
 
+    # No defense
     if defense_name == 'none' or defense_name == '':
         return victim
+
+    # Input defenses (Experiment 1)
     elif defense_name == 'spellcheck':
         return SpellCheckDefense(victim, verbose=verbose)
     elif defense_name == 'char_noise':
@@ -657,7 +839,16 @@ def get_defense(
     elif defense_name == 'majority_vote' or defense_name == 'vote':
         num_copies = int(param) if param > 0 else 5
         return MajorityVoteDefense(victim, num_copies=num_copies, seed=seed, verbose=verbose)
+
+    # Output defenses (Experiment 2)
+    elif defense_name == 'label_flip' or defense_name == 'flip':
+        return LabelFlippingDefense(victim, flip_prob=param, seed=seed, verbose=verbose)
+    elif defense_name == 'random_threshold' or defense_name == 'threshold':
+        return RandomThresholdDefense(victim, threshold_range=param, seed=seed, verbose=verbose)
+    elif defense_name == 'confidence_noise' or defense_name == 'conf_noise':
+        return ConfidencePerturbationDefense(victim, noise_std=param, seed=seed, verbose=verbose)
+
     else:
         raise ValueError(f"Unknown defense: {defense_name}. "
-                        f"Available: none, spellcheck, char_noise, char_masking, identity, "
-                        f"unicode, majority_vote")
+                        f"Available - Input: none, spellcheck, char_noise, char_masking, identity, "
+                        f"unicode, majority_vote. Output: label_flip, random_threshold, confidence_noise")
