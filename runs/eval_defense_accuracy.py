@@ -40,11 +40,21 @@ DEFENSE_CONFIGS = [
     ('char_noise', 0.10),
     ('char_noise', 0.15),
     ('char_noise', 0.20),
-    # Survey-based defenses
+    # Survey-based defenses (Exp 1)
     ('unicode', 0.0),
     ('majority_vote', 3),
     ('majority_vote', 5),
     ('majority_vote', 7),
+    # Output perturbation defenses (Exp 2)
+    ('label_flip', 0.05),
+    ('label_flip', 0.10),
+    ('label_flip', 0.15),
+    ('random_threshold', 0.05),
+    ('random_threshold', 0.10),
+    ('random_threshold', 0.15),
+    ('confidence_noise', 0.05),
+    ('confidence_noise', 0.10),
+    ('confidence_noise', 0.15),
 ]
 
 DEFENSE_SEED = 42
