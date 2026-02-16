@@ -647,7 +647,7 @@ class OutputDefenseWrapper(OpenAttack.Classifier, ABC):
         self.rng = random.Random(seed)
         self.np_rng = np.random.RandomState(seed)
         self.verbose = verbose
-        self.perturbation_log = []  # Track perturbations for analysis
+        self.modifications = []  # For compatibility with attack.py
 
     @abstractmethod
     def perturb_prob(self, probs: np.ndarray) -> np.ndarray:
@@ -661,6 +661,18 @@ class OutputDefenseWrapper(OpenAttack.Classifier, ABC):
 
     def get_pred(self, input_: List[str]) -> np.ndarray:
         return self.get_prob(input_).argmax(axis=1)
+
+    def get_modifications(self) -> List[tuple]:
+        """Return empty list - output defenses don't modify input text."""
+        return self.modifications
+
+    def clear_modifications(self):
+        """Clear modifications list."""
+        self.modifications = []
+
+    def save_modifications(self, path: str):
+        """Save modifications - no-op for output defenses."""
+        pass
 
     def finalise(self):
         if hasattr(self.victim, 'finalise'):
