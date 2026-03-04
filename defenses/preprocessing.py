@@ -489,14 +489,16 @@ class MajorityVoteDefense(DefenseWrapper):
     For each input text:
     1. Create N perturbed copies using random character-level perturbations
     2. Classify each copy with the victim model
-    3. Return the majority vote prediction (as probability distribution)
+    3. Return the majority vote as the predicted class
 
     This defense exploits the fact that adversarial perturbations are often
     fragile to additional small random changes. By voting across multiple
     perturbed versions, we can "vote out" the adversarial effect.
 
-    IMPORTANT: This defense overrides get_prob() directly (not just defend_single)
-    because it needs to query the victim model multiple times and aggregate results.
+    IMPORTANT: get_prob() returns CLEAN probabilities from the victim (no noise),
+    while get_pred() uses majority voting over N perturbed copies. This decouples
+    the attacker's feedback signal from the defense mechanism: the attacker sees
+    clean gradients, but the actual classification decision is robust via voting.
 
     Based on: Swenor & Kalita "Using random perturbations to mitigate adversarial attacks"
     Survey reference: Section 5.1.1 - Perturbation Identification
@@ -518,7 +520,7 @@ class MajorityVoteDefense(DefenseWrapper):
             victim: The classifier to wrap
             num_copies: Number of perturbed copies to create (odd numbers preferred for voting)
             perturbation_prob: Probability of perturbing each character
-            aggregation: Voting method - 'hard' (count predictions) or 'soft' (average probs)
+            aggregation: Voting method - 'hard' (majority class) or 'soft' (average probs argmax)
             seed: Random seed for reproducibility
             verbose: Whether to print modifications
         """
@@ -530,19 +532,27 @@ class MajorityVoteDefense(DefenseWrapper):
 
     def get_prob(self, input_: List[str]) -> np.ndarray:
         """
-        Override get_prob to implement majority voting.
+        Return clean probabilities from the victim model (no noise applied).
 
-        Instead of transforming input once, we:
-        1. Generate num_copies perturbed versions of each input
-        2. Get predictions for all versions
-        3. Aggregate via majority vote (hard or soft)
+        The probability returned to the attacker is NOT conditioned by the
+        internal noise used for voting. This ensures the attacker sees a clean
+        gradient signal from the underlying model.
+        """
+        return self.victim.get_prob(input_)
+
+    def get_pred(self, input_: List[str]) -> np.ndarray:
+        """
+        Apply majority voting over N randomly perturbed copies of the input.
+
+        The actual classification decision uses robust voting across N noisy
+        copies, while get_prob() returns clean probabilities to decouple
+        the attacker's feedback signal from the defense mechanism.
         """
         all_probs = []
 
-        for i in range(self.num_copies):
+        for _ in range(self.num_copies):
             # Generate perturbed copy (using parent's apply_defense for text pair handling)
             perturbed_input = self.apply_defense(input_)
-            # Get probabilities from victim
             probs = self.victim.get_prob(perturbed_input)
             all_probs.append(probs)
 
@@ -550,21 +560,19 @@ class MajorityVoteDefense(DefenseWrapper):
         all_probs = np.stack(all_probs, axis=0)
 
         if self.aggregation == 'hard':
-            # Hard voting: count predictions and convert to probability distribution
+            # Hard voting: count predictions, return majority class per sample
             predictions = all_probs.argmax(axis=2)  # (num_copies, batch_size)
             batch_size = predictions.shape[1]
-            num_classes = all_probs.shape[2]
-            result = np.zeros((batch_size, num_classes))
-
+            result = np.zeros(batch_size, dtype=int)
             for sample_idx in range(batch_size):
                 votes = predictions[:, sample_idx]
-                for class_idx in range(num_classes):
-                    result[sample_idx, class_idx] = np.sum(votes == class_idx) / self.num_copies
-
+                unique, counts = np.unique(votes, return_counts=True)
+                result[sample_idx] = unique[counts.argmax()]
             return result
         else:  # soft voting
-            # Soft voting: average probabilities across all copies
-            return np.mean(all_probs, axis=0)
+            # Soft voting: average probabilities, return argmax
+            avg_probs = np.mean(all_probs, axis=0)
+            return avg_probs.argmax(axis=1)
 
     def defend_single(self, text: str) -> str:
         """
