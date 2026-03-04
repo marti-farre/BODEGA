@@ -495,10 +495,11 @@ class MajorityVoteDefense(DefenseWrapper):
     fragile to additional small random changes. By voting across multiple
     perturbed versions, we can "vote out" the adversarial effect.
 
-    IMPORTANT: get_prob() returns CLEAN probabilities from the victim (no noise),
-    while get_pred() uses majority voting over N perturbed copies. This decouples
-    the attacker's feedback signal from the defense mechanism: the attacker sees
-    clean gradients, but the actual classification decision is robust via voting.
+    IMPORTANT: get_prob() returns NOISY aggregated probabilities (vote fractions
+    over N perturbed copies), acting as a stochastic oracle. This confuses
+    gradient-based word-level attacks, which rely on clean probability signals
+    to find effective substitutions. Aligned with randomized smoothing theory
+    (Cohen et al. 2019): the noisy oracle is part of the defense mechanism.
 
     Based on: Swenor & Kalita "Using random perturbations to mitigate adversarial attacks"
     Survey reference: Section 5.1.1 - Perturbation Identification
@@ -532,26 +533,15 @@ class MajorityVoteDefense(DefenseWrapper):
 
     def get_prob(self, input_: List[str]) -> np.ndarray:
         """
-        Return clean probabilities from the victim model (no noise applied).
+        Return vote-fraction probabilities from N perturbed copies (noisy oracle).
 
-        The probability returned to the attacker is NOT conditioned by the
-        internal noise used for voting. This ensures the attacker sees a clean
-        gradient signal from the underlying model.
-        """
-        return self.victim.get_prob(input_)
-
-    def get_pred(self, input_: List[str]) -> np.ndarray:
-        """
-        Apply majority voting over N randomly perturbed copies of the input.
-
-        The actual classification decision uses robust voting across N noisy
-        copies, while get_prob() returns clean probabilities to decouple
-        the attacker's feedback signal from the defense mechanism.
+        Creates N randomly perturbed copies of the input, classifies each, and
+        returns the vote fractions as the probability estimate. This stochastic
+        oracle confuses gradient-based word-level attacks.
         """
         all_probs = []
 
         for _ in range(self.num_copies):
-            # Generate perturbed copy (using parent's apply_defense for text pair handling)
             perturbed_input = self.apply_defense(input_)
             probs = self.victim.get_prob(perturbed_input)
             all_probs.append(probs)
@@ -560,19 +550,18 @@ class MajorityVoteDefense(DefenseWrapper):
         all_probs = np.stack(all_probs, axis=0)
 
         if self.aggregation == 'hard':
-            # Hard voting: count predictions, return majority class per sample
+            # Vote fractions: proportion of copies predicting each class
             predictions = all_probs.argmax(axis=2)  # (num_copies, batch_size)
             batch_size = predictions.shape[1]
-            result = np.zeros(batch_size, dtype=int)
+            num_classes = all_probs.shape[2]
+            result = np.zeros((batch_size, num_classes))
             for sample_idx in range(batch_size):
                 votes = predictions[:, sample_idx]
-                unique, counts = np.unique(votes, return_counts=True)
-                result[sample_idx] = unique[counts.argmax()]
+                for class_idx in range(num_classes):
+                    result[sample_idx, class_idx] = np.sum(votes == class_idx) / self.num_copies
             return result
         else:  # soft voting
-            # Soft voting: average probabilities, return argmax
-            avg_probs = np.mean(all_probs, axis=0)
-            return avg_probs.argmax(axis=1)
+            return np.mean(all_probs, axis=0)
 
     def defend_single(self, text: str) -> str:
         """
@@ -824,8 +813,8 @@ class SpellCheckMVDefense(MajorityVoteDefense):
             → majority vote
             → prediction
 
-    get_prob(): SpellCheck input → clean victim probabilities (no noise)
-    get_pred(): SpellCheck input → N noisy MV copies → majority vote
+    get_prob(): SpellCheck input → N noisy MV copies → vote-fraction probs (noisy oracle)
+    get_pred(): get_prob().argmax() — consistent with MV noisy oracle
 
     Rationale:
     - SpellCheck handles character-level attacks (DeepWordBug typos)
@@ -847,35 +836,9 @@ class SpellCheckMVDefense(MajorityVoteDefense):
         self._spellcheck = SpellCheckDefense(victim, verbose=verbose)
 
     def get_prob(self, input_: List[str]) -> np.ndarray:
-        """SpellCheck input, then return clean victim probabilities."""
+        """SpellCheck input, then return noisy MV vote-fraction probabilities."""
         spellchecked = self._spellcheck.apply_defense(input_)
-        return self.victim.get_prob(spellchecked)
-
-    def get_pred(self, input_: List[str]) -> np.ndarray:
-        """SpellCheck input first, then majority vote over N noisy copies."""
-        spellchecked = self._spellcheck.apply_defense(input_)
-
-        all_probs = []
-        for _ in range(self.num_copies):
-            # MV noise applied to the spellchecked (not original) input
-            perturbed = self.apply_defense(spellchecked)
-            probs = self.victim.get_prob(perturbed)
-            all_probs.append(probs)
-
-        all_probs = np.stack(all_probs, axis=0)
-
-        if self.aggregation == 'hard':
-            predictions = all_probs.argmax(axis=2)
-            batch_size = predictions.shape[1]
-            result = np.zeros(batch_size, dtype=int)
-            for sample_idx in range(batch_size):
-                votes = predictions[:, sample_idx]
-                unique, counts = np.unique(votes, return_counts=True)
-                result[sample_idx] = unique[counts.argmax()]
-            return result
-        else:
-            avg_probs = np.mean(all_probs, axis=0)
-            return avg_probs.argmax(axis=1)
+        return super().get_prob(spellchecked)
 
 
 def get_defense(
