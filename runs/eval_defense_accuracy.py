@@ -55,6 +55,10 @@ DEFENSE_CONFIGS = [
     ('confidence_noise', 0.05),
     ('confidence_noise', 0.10),
     ('confidence_noise', 0.15),
+    # Combined defenses (Exp 3)
+    ('spellcheck_mv', 3),
+    ('spellcheck_mv', 5),
+    ('spellcheck_mv', 7),
 ]
 
 DEFENSE_SEED = 42

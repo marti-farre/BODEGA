@@ -807,6 +807,77 @@ class ConfidencePerturbationDefense(OutputDefenseWrapper):
         return perturbed
 
 
+# =============================================================================
+# COMBINED DEFENSES (Experiment 3)
+# =============================================================================
+
+
+class SpellCheckMVDefense(MajorityVoteDefense):
+    """
+    Combined defense: SpellCheck first, then MajorityVote.
+
+    Pipeline:
+        adversarial input
+            → SpellCheck (remove char-level adversarial perturbations)
+            → N noisy MV copies
+            → victim × N
+            → majority vote
+            → prediction
+
+    get_prob(): SpellCheck input → clean victim probabilities (no noise)
+    get_pred(): SpellCheck input → N noisy MV copies → majority vote
+
+    Rationale:
+    - SpellCheck handles character-level attacks (DeepWordBug typos)
+    - MajorityVote handles word-level attacks (BERTattack, PWWS, Genetic)
+    - Together they provide broad coverage with low utility cost
+
+    Based on: experiment-3/combine-voting-check
+    """
+
+    def __init__(
+        self,
+        victim: OpenAttack.Classifier,
+        num_copies: int = 7,
+        seed: Optional[int] = None,
+        verbose: bool = False
+    ):
+        super().__init__(victim, num_copies=num_copies, seed=seed, verbose=verbose)
+        # Internal SpellCheck for preprocessing (does not wrap victim, just used for text transform)
+        self._spellcheck = SpellCheckDefense(victim, verbose=verbose)
+
+    def get_prob(self, input_: List[str]) -> np.ndarray:
+        """SpellCheck input, then return clean victim probabilities."""
+        spellchecked = self._spellcheck.apply_defense(input_)
+        return self.victim.get_prob(spellchecked)
+
+    def get_pred(self, input_: List[str]) -> np.ndarray:
+        """SpellCheck input first, then majority vote over N noisy copies."""
+        spellchecked = self._spellcheck.apply_defense(input_)
+
+        all_probs = []
+        for _ in range(self.num_copies):
+            # MV noise applied to the spellchecked (not original) input
+            perturbed = self.apply_defense(spellchecked)
+            probs = self.victim.get_prob(perturbed)
+            all_probs.append(probs)
+
+        all_probs = np.stack(all_probs, axis=0)
+
+        if self.aggregation == 'hard':
+            predictions = all_probs.argmax(axis=2)
+            batch_size = predictions.shape[1]
+            result = np.zeros(batch_size, dtype=int)
+            for sample_idx in range(batch_size):
+                votes = predictions[:, sample_idx]
+                unique, counts = np.unique(votes, return_counts=True)
+                result[sample_idx] = unique[counts.argmax()]
+            return result
+        else:
+            avg_probs = np.mean(all_probs, axis=0)
+            return avg_probs.argmax(axis=1)
+
+
 def get_defense(
     defense_name: str,
     victim: OpenAttack.Classifier,
@@ -831,6 +902,8 @@ def get_defense(
                 - 'label_flip': Flip output label with probability P(param)
                 - 'random_threshold': Random decision threshold
                 - 'confidence_noise': Add Gaussian noise to probabilities
+            Combined defenses (Exp 3):
+                - 'spellcheck_mv': SpellCheck then MajorityVote
         victim: The classifier to wrap
         param: Defense parameter (meaning depends on defense type)
         seed: Random seed for reproducibility
@@ -868,7 +941,13 @@ def get_defense(
     elif defense_name == 'confidence_noise' or defense_name == 'conf_noise':
         return ConfidencePerturbationDefense(victim, noise_std=param, seed=seed, verbose=verbose)
 
+    # Combined defenses (Experiment 3)
+    elif defense_name == 'spellcheck_mv' or defense_name == 'sc_mv':
+        num_copies = int(param) if param > 0 else 7
+        return SpellCheckMVDefense(victim, num_copies=num_copies, seed=seed, verbose=verbose)
+
     else:
         raise ValueError(f"Unknown defense: {defense_name}. "
                         f"Available - Input: none, spellcheck, char_noise, char_masking, identity, "
-                        f"unicode, majority_vote. Output: label_flip, random_threshold, confidence_noise")
+                        f"unicode, majority_vote. Output: label_flip, random_threshold, confidence_noise. "
+                        f"Combined: spellcheck_mv")
