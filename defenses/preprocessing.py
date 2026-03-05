@@ -625,7 +625,9 @@ class MajorityVoteDefense(DefenseWrapper):
             result.append(char)
             i += 1
 
-        return ''.join(result)
+        result_str = ''.join(result)
+        # Guard: never return empty string (victim models can't handle it)
+        return result_str if result_str.strip() else text
 
 
 # =============================================================================
