@@ -536,15 +536,28 @@ class MajorityVoteDefense(DefenseWrapper):
         Return vote-fraction probabilities from N perturbed copies (noisy oracle).
 
         Creates N randomly perturbed copies of the input, classifies each, and
-        returns the vote fractions as the probability estimate. This stochastic
-        oracle confuses gradient-based word-level attacks.
-        """
-        all_probs = []
+        returns the vote fractions as the probability estimate. This oracle confuses
+        gradient-based word-level attacks.
 
-        for _ in range(self.num_copies):
+        Perturbations are deterministic per input text (seeded from a hash of the
+        input), so the same input always produces the same prediction. This prevents
+        inconsistency errors when attackers verify their adversarial examples.
+        The defense remains effective because different adversarial texts (different
+        word substitutions) receive different noise patterns.
+        """
+        import hashlib
+        text_hash = int(
+            hashlib.md5('||'.join(input_).encode('utf-8', errors='replace')).hexdigest(), 16
+        )
+
+        all_probs = []
+        saved_rng = self.rng
+        for copy_idx in range(self.num_copies):
+            self.rng = random.Random((text_hash + copy_idx) % (2 ** 31))
             perturbed_input = self.apply_defense(input_)
             probs = self.victim.get_prob(perturbed_input)
             all_probs.append(probs)
+        self.rng = saved_rng
 
         # Stack: shape (num_copies, batch_size, num_classes)
         all_probs = np.stack(all_probs, axis=0)
