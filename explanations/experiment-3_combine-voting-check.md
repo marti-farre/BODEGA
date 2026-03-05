@@ -2,7 +2,7 @@
 
 **Branch:** `experiment-3/combine-voting-check`
 **Parent:** `main` (after merging experiment-1 and experiment-2)
-**Status:** In progress
+**Status:** Completed
 **Date:** March 2026
 
 ---
@@ -15,18 +15,21 @@ This experiment evaluates a **combined defense** that chains SpellCheck and Majo
 
 From experiments 1 and 2:
 - **SpellCheck** is the best defense against character-level attacks (DeepWordBug: -32pp ASR) but useless against word-level attacks
-- **MajorityVote@7** (old) is the best defense against word-level attacks (BERTattack: -52pp ASR) but only moderately effective against character-level attacks
+- **MajorityVote@7** is the best defense against word-level attacks (BERTattack: -52pp ASR) but only moderately effective against character-level attacks
 - Neither alone provides broad coverage
 
 A combined SpellCheck→MajorityVote pipeline should address both attack types.
 
-### Key Change from Experiment 1: MV Fix
+### Note on MajorityVote Implementation
 
-The `MajorityVoteDefense` was updated in experiment-2:
-- **Old**: `get_prob()` returned noisy aggregated probabilities (conditioned on noise)
-- **New**: `get_prob()` returns clean victim probabilities; `get_pred()` uses majority voting
+During this experiment, we explored whether `get_prob()` in `MajorityVoteDefense` should return clean victim probabilities (decoupled from noise) or the original noisy vote-fraction probabilities. We initially implemented the "clean" version, compared results, and **reverted to the original noisy oracle**:
 
-This change reduces MV's effectiveness against word-level attacks (see `results/majority_vote_fixed/SUMMARY_mv_fix_comparison.md`), as the clean probability signal helps attackers optimize more effectively. The combined defense aims to compensate.
+- **Original (retained)**: `get_prob()` returns vote-fraction probabilities from N noisy copies — a stochastic oracle that confuses gradient-based attackers. Aligned with randomized smoothing theory (Cohen et al. 2019).
+- **"Fixed" (discarded)**: `get_prob()` returns clean victim probabilities; `get_pred()` votes separately. This made MV 10-21pp worse for word-level attacks (BERTattack: 30.3% → 41.1% ASR; PWWS: 36.3% → 57.7% ASR).
+
+The comparison is documented in `results/majority_vote_fixed/SUMMARY_mv_fix_comparison.md`.
+
+**Conclusion**: The noisy oracle is a feature, not a bug — it is the core mechanism by which MV disrupts word-level adversarial search.
 
 ---
 
@@ -62,7 +65,7 @@ Adversarial Input
 │    perturbed = add_noise(text)   │  ← Random char ops (delete/swap/insert)
 │    probs_i = victim(perturbed)   │
 │                                  │
-│  return majority_class(probs)    │  ← Robust aggregation
+│  return vote_fractions(probs)    │  ← Noisy oracle (stochastic probabilities)
 └──────────────────────────────────┘
        │
        ▼
@@ -74,14 +77,14 @@ Adversarial Input
 ```
 get_prob(adversarial_input):
     spellchecked = SpellCheck(adversarial_input)
-    return victim.get_prob(spellchecked)          # clean, no noise
-
-get_pred(adversarial_input):
-    spellchecked = SpellCheck(adversarial_input)
+    # Run N noisy copies → return vote-fraction probabilities (noisy oracle)
     for N copies:
         noisy = add_mv_noise(spellchecked)
         probs.append(victim(noisy))
-    return majority_vote(probs)
+    return vote_fractions(probs)
+
+get_pred(adversarial_input):
+    return get_prob(adversarial_input).argmax()   # majority class
 ```
 
 ### Comparison with Individual Defenses
@@ -91,10 +94,10 @@ SpellCheck alone:
   adversarial → SpellCheck → victim → prediction
 
 MajorityVote alone:
-  adversarial → [N noisy copies] → victim × N → vote → prediction
+  adversarial → [N noisy copies] → victim × N → vote fractions → argmax
 
 SpellCheckMV (combined):
-  adversarial → SpellCheck → [N noisy copies] → victim × N → vote → prediction
+  adversarial → SpellCheck → [N noisy copies] → victim × N → vote fractions → argmax
 ```
 
 ---
@@ -111,6 +114,7 @@ SpellCheckMV (combined):
 
 **Internal components**:
 - `self._spellcheck`: `SpellCheckDefense` instance for text preprocessing
+- Inherits `MajorityVoteDefense.get_prob()` for noisy oracle (N copies → vote fractions)
 - Inherits `MajorityVoteDefense.defend_single()` for random character perturbations
 
 ---
@@ -123,7 +127,7 @@ SpellCheckMV (combined):
 |---------|-------------|-------------------|
 | none | Baseline | - |
 | spellcheck | SpellCheck alone | Char-level attacks |
-| majority_vote@7 | MV alone (fixed) | Word-level attacks (reduced vs old) |
+| majority_vote@7 | MV alone (noisy oracle) | Word-level attacks |
 | spellcheck_mv@7 | Combined | Both attack types |
 
 ### Fixed Attacker Benchmark
@@ -158,34 +162,26 @@ python3 runs/eval_defense_accuracy.py PR2 BiLSTM data/PR2 data/PR2/BiLSTM-512.pt
 
 ---
 
-## Expected Results
-
-Based on individual defense results from experiments 1 and 2:
-
-| Attack | Baseline | SpellCheck | MV@7 (fixed) | SpellCheck+MV@7 (expected) |
-|--------|----------|------------|--------------|---------------------------|
-| BERTattack | 82.5% | 82.2% | ~41% | ~35-40% |
-| PWWS | 87.5% | 87.3% | ~58% | ~50-55% |
-| DeepWordBug | 46.9% | 14.7% | ~37% | ~12-18% |
-| Genetic | 89.7% | 87.7% | ~58% | ~50-55% |
-| VIPER | 26.4% | 73.8% | ~29% | ~25-30% |
-
-**Hypothesis**: SpellCheck+MV should perform at least as well as the better individual defense for each attack type:
-- For DeepWordBug: dominated by SpellCheck (SpellCheck undoes typos before MV)
-- For word-level: dominated by MV (SpellCheck has no effect on word substitutions)
-- VIPER: uncertain (SpellCheck may hurt, MV may be neutral)
-
-### Expected Clean Accuracy
-
-SpellCheck has minimal accuracy cost (+0.4%), MV@7 costs -0.4%. Combined should be ~0% delta, or slightly negative due to occasional MV misclassification on spellchecked input.
-
----
-
 ## Results
 
-*[To be filled after running experiments]*
+See `results/experiment-3_combine-voting-check/SUMMARY_combined_defenses.md` for the full analysis.
 
-See `results/experiment-3_combine-voting-check/SUMMARY_combined_defenses.md`
+### Attack Success Rate (ASR)
+
+| Attack | None | SpellCheck | MV@7 | SC+MV@7 |
+|--------|------|------------|------|---------|
+| BERTattack | 82.5% | 82.2% | **30.3%** | 33.7% |
+| PWWS | 87.3% | 87.3% | **36.3%** | 48.1% |
+| DeepWordBug | 46.9% | **14.7%** | 26.2% | 17.1% |
+| Genetic | 89.9% | 87.7% | 42.8% | **39.7%** |
+| VIPER | **26.4%** | 73.8% ❌ | 30.0% | 40.4% |
+
+### Key Findings
+
+1. **MV@7 dominates word-level attacks** (-47 to -52pp) via the noisy oracle mechanism
+2. **SpellCheck dominates DeepWordBug** (-32pp); SC+MV is close at -30pp
+3. **SC+MV@7 provides broad but non-dominant coverage** — never worst, rarely best
+4. **VIPER: SpellCheck is counterproductive** (+47.4pp). SymSpell misinterprets homoglyphs as misspellings and "corrects" them into adversarially useful words. No defense successfully reduces VIPER ASR below baseline.
 
 ---
 
@@ -194,10 +190,10 @@ See `results/experiment-3_combine-voting-check/SUMMARY_combined_defenses.md`
 | Defense | Source | vs BERTattack | vs DeepWordBug | Utility Cost |
 |---------|--------|---------------|----------------|--------------|
 | SpellCheck | Exp 1 | -0.2pp | **-32.2pp** | +0.4% |
-| MV@7 (old) | Exp 1 | **-52.2pp** | -20.7pp | -0.4% |
-| MV@7 (fixed) | Exp 2 | -41.4pp | -9.9pp | -0.4% |
+| MV@7 (noisy oracle) | Exp 1/3 | **-52.2pp** | -20.7pp | -0.4% |
+| MV@7 (clean prob, discarded) | Exp 2 | -41.4pp | -9.9pp | -0.4% |
 | LabelFlip@0.10 | Exp 2 | -44.7pp | -14.9pp | -4.7% |
-| SpellCheck+MV@7 | **Exp 3** | TBD | TBD | TBD |
+| SpellCheck+MV@7 | **Exp 3** | -48.8pp | -29.8pp | **0.0%** |
 
 ---
 
