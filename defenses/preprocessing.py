@@ -797,7 +797,7 @@ class ConfidencePerturbationDefense(OutputDefenseWrapper):
 
 
 # =============================================================================
-# COMBINED DEFENSES (Experiment 3)
+# COMBINED DEFENSES (Experiments 3 & 4)
 # =============================================================================
 
 
@@ -839,6 +839,46 @@ class SpellCheckMVDefense(MajorityVoteDefense):
         """SpellCheck input, then return noisy MV vote-fraction probabilities."""
         spellchecked = self._spellcheck.apply_defense(input_)
         return super().get_prob(spellchecked)
+
+
+class UnicodeMVDefense(MajorityVoteDefense):
+    """
+    Combined defense: Unicode canonicalization first, then MajorityVote.
+
+    Pipeline:
+        adversarial input
+            → Unicode canonicalization (map confusables → ASCII, remove zero-width chars)
+            → N noisy MV copies
+            → victim × N
+            → majority vote
+            → prediction
+
+    get_prob(): Unicode-canonicalize input → N noisy MV copies → vote-fraction probs (noisy oracle)
+    get_pred(): get_prob().argmax() — consistent with MV noisy oracle
+
+    Rationale:
+    - SpellCheck fails against VIPER (homoglyphs misidentified as typos → corrected adversarially)
+    - Unicode canonicalization directly maps Cyrillic/Greek confusables to ASCII before classification
+    - MajorityVote handles word-level attacks (BERTattack, PWWS, Genetic)
+    - Together they should cover VIPER (char-level homoglyphs) + word-level attacks
+
+    Based on: experiment-4/unicode-canonicalization
+    """
+
+    def __init__(
+        self,
+        victim: OpenAttack.Classifier,
+        num_copies: int = 7,
+        seed: Optional[int] = None,
+        verbose: bool = False
+    ):
+        super().__init__(victim, num_copies=num_copies, seed=seed, verbose=verbose)
+        self._unicode = UnicodeCanonicalizationDefense(victim, verbose=verbose)
+
+    def get_prob(self, input_: List[str]) -> np.ndarray:
+        """Unicode-canonicalize input, then return noisy MV vote-fraction probabilities."""
+        canonicalized = self._unicode.apply_defense(input_)
+        return super().get_prob(canonicalized)
 
 
 def get_defense(
@@ -909,8 +949,13 @@ def get_defense(
         num_copies = int(param) if param > 0 else 7
         return SpellCheckMVDefense(victim, num_copies=num_copies, seed=seed, verbose=verbose)
 
+    # Combined defenses (Experiment 4)
+    elif defense_name == 'unicode_mv' or defense_name == 'uc_mv':
+        num_copies = int(param) if param > 0 else 7
+        return UnicodeMVDefense(victim, num_copies=num_copies, seed=seed, verbose=verbose)
+
     else:
         raise ValueError(f"Unknown defense: {defense_name}. "
                         f"Available - Input: none, spellcheck, char_noise, char_masking, identity, "
                         f"unicode, majority_vote. Output: label_flip, random_threshold, confidence_noise. "
-                        f"Combined: spellcheck_mv")
+                        f"Combined: spellcheck_mv, unicode_mv")
