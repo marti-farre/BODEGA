@@ -49,25 +49,25 @@ echo ""
 echo "=== 5.1: Train XARELLO on undefended victim ==="
 echo "Output: $MODEL_DIR_51"
 
-(cd "$XARELLO_DIR" && \
+(cd "$XARELLO_ABS" && \
   python main-train-eval.py "$TASK" "$VICTIM" "$MODEL_DIR_51")
 
 echo ""
 echo "=== 5.1: Evaluate pre-trained XARELLO — no defense (baseline) ==="
-(cd "$XARELLO_DIR" && \
+(cd "$XARELLO_ABS" && \
   python evaluation/attack.py \
     --task "$TASK" --victim "$VICTIM" \
     --qmodel_path "${MODEL_DIR_51}/xarello-qmodel.pth" \
-    --out_dir "$(pwd)/$OUT_DIR_51" \
+    --out_dir "$OUT_DIR_51" \
     --defense none)
 
 echo ""
 echo "=== 5.1: Evaluate pre-trained XARELLO — SC+MV@7 defense ==="
-(cd "$XARELLO_DIR" && \
+(cd "$XARELLO_ABS" && \
   python evaluation/attack.py \
     --task "$TASK" --victim "$VICTIM" \
     --qmodel_path "${MODEL_DIR_51}/xarello-qmodel.pth" \
-    --out_dir "$(pwd)/$OUT_DIR_51" \
+    --out_dir "$OUT_DIR_51" \
     --defense "$DEFENSE" --defense_param "$DEFENSE_PARAM" --defense_seed "$DEFENSE_SEED")
 
 # ─────────────────────────────────────────────────────────────
@@ -77,27 +77,27 @@ echo ""
 echo "=== 5.2: Train XARELLO on defended victim (${DEFENSE}@${DEFENSE_PARAM}) ==="
 echo "Output: $MODEL_DIR_52"
 
-(cd "$XARELLO_DIR" && \
+(cd "$XARELLO_ABS" && \
   python main-train-eval.py "$TASK" "$VICTIM" "$MODEL_DIR_52" \
     none 0.0 42 \
     "$DEFENSE" "$DEFENSE_PARAM" "$DEFENSE_SEED")
 
 echo ""
 echo "=== 5.2: Evaluate adaptive XARELLO — no defense (baseline) ==="
-(cd "$XARELLO_DIR" && \
+(cd "$XARELLO_ABS" && \
   python evaluation/attack.py \
     --task "$TASK" --victim "$VICTIM" \
     --qmodel_path "${MODEL_DIR_52}/xarello-qmodel.pth" \
-    --out_dir "$(pwd)/$OUT_DIR_52" \
+    --out_dir "$OUT_DIR_52" \
     --defense none)
 
 echo ""
 echo "=== 5.2: Evaluate adaptive XARELLO — SC+MV@7 defense ==="
-(cd "$XARELLO_DIR" && \
+(cd "$XARELLO_ABS" && \
   python evaluation/attack.py \
     --task "$TASK" --victim "$VICTIM" \
     --qmodel_path "${MODEL_DIR_52}/xarello-qmodel.pth" \
-    --out_dir "$(pwd)/$OUT_DIR_52" \
+    --out_dir "$OUT_DIR_52" \
     --defense "$DEFENSE" --defense_param "$DEFENSE_PARAM" --defense_seed "$DEFENSE_SEED")
 
 echo ""
