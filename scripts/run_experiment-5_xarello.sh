@@ -1,12 +1,12 @@
 #!/bin/bash
-# Experiment 5: XARELLO Adaptive Attacker vs SC+MV@7 Defense
+# Experiment 5: XARELLO Adaptive Attacker vs SC+MV@3 Defense
 #
 # Two sub-experiments:
 #   5.1 Pre-trained XARELLO: train on undefended victim, evaluate against defended victim
 #   5.2 Adaptive XARELLO:    train on defended victim, evaluate against defended victim
 #
 # Both train on PR2/BiLSTM (same as previous experiments).
-# Defense: spellcheck_mv@7 (best broad coverage from experiment-3).
+# Defense: spellcheck_mv@3 (num_copies=3 for faster training vs 7).
 #
 # Prerequisites:
 #   - XARELLO repo at ../xarello/ on branch experiment-5/bodega-defenses
@@ -24,7 +24,7 @@ XARELLO_ABS="$(cd "${BODEGA_ABS}/../xarello" && pwd)"
 TASK="PR2"
 VICTIM="BiLSTM"
 DEFENSE="spellcheck_mv"
-DEFENSE_PARAM="7"
+DEFENSE_PARAM="3"
 DEFENSE_SEED="42"
 
 MODEL_DIR_51="${HOME}/data/xarello/models/exp5.1/${TASK}-${VICTIM}"
@@ -50,7 +50,7 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 export TOKENIZERS_PARALLELISM=false
 
 echo "========================================================"
-echo "Experiment 5: XARELLO Adaptive Attacker vs SC+MV@7"
+echo "Experiment 5: XARELLO Adaptive Attacker vs SC+MV@${DEFENSE_PARAM}"
 echo "Task: $TASK, Victim: $VICTIM, Defense: ${DEFENSE}@${DEFENSE_PARAM}"
 echo "========================================================"
 
@@ -79,7 +79,7 @@ echo "=== 5.1: Evaluate pre-trained XARELLO — no defense (baseline) ==="
     --defense none)
 
 echo ""
-echo "=== 5.1: Evaluate pre-trained XARELLO — SC+MV@7 defense ==="
+echo "=== 5.1: Evaluate pre-trained XARELLO — SC+MV@${DEFENSE_PARAM} defense ==="
 (cd "$XARELLO_ABS" && \
   python evaluation/attack.py \
     --task "$TASK" --victim "$VICTIM" \
@@ -95,10 +95,14 @@ echo ""
 echo "=== 5.2: Train XARELLO on defended victim (${DEFENSE}@${DEFENSE_PARAM}) ==="
 echo "Output: $MODEL_DIR_52"
 
-(cd "$XARELLO_ABS" && \
-  python main-train-eval.py "$TASK" "$VICTIM" "$MODEL_DIR_52" \
-    none 0.0 42 \
-    "$DEFENSE" "$DEFENSE_PARAM" "$DEFENSE_SEED")
+if [ -f "${MODEL_DIR_52}/xarello-qmodel.pth" ]; then
+    echo "Model already exists at ${MODEL_DIR_52}/xarello-qmodel.pth — skipping training."
+else
+    (cd "$XARELLO_ABS" && \
+      python main-train-eval.py "$TASK" "$VICTIM" "$MODEL_DIR_52" \
+        none 0.0 42 \
+        "$DEFENSE" "$DEFENSE_PARAM" "$DEFENSE_SEED")
+fi
 
 echo ""
 echo "=== 5.2: Evaluate adaptive XARELLO — no defense (baseline) ==="
@@ -111,7 +115,7 @@ echo "=== 5.2: Evaluate adaptive XARELLO — no defense (baseline) ==="
     --defense none)
 
 echo ""
-echo "=== 5.2: Evaluate adaptive XARELLO — SC+MV@7 defense ==="
+echo "=== 5.2: Evaluate adaptive XARELLO — SC+MV@${DEFENSE_PARAM} defense ==="
 (cd "$XARELLO_ABS" && \
   python evaluation/attack.py \
     --task "$TASK" --victim "$VICTIM" \
