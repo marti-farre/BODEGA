@@ -45,6 +45,10 @@ fi
 # Both BODEGA and XARELLO must be on PYTHONPATH as absolute paths
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}${BODEGA_ABS}:${XARELLO_ABS}"
 
+# macOS: prevent crash when datasets/BLEURT forks after MPS/PyTorch initialises mutex state
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+export TOKENIZERS_PARALLELISM=false
+
 echo "========================================================"
 echo "Experiment 5: XARELLO Adaptive Attacker vs SC+MV@7"
 echo "Task: $TASK, Victim: $VICTIM, Defense: ${DEFENSE}@${DEFENSE_PARAM}"
