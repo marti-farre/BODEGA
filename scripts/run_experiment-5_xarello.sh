@@ -57,8 +57,12 @@ echo ""
 echo "=== 5.1: Train XARELLO on undefended victim ==="
 echo "Output: $MODEL_DIR_51"
 
-(cd "$XARELLO_ABS" && \
-  python main-train-eval.py "$TASK" "$VICTIM" "$MODEL_DIR_51")
+if [ -f "${MODEL_DIR_51}/xarello-qmodel.pth" ]; then
+    echo "Model already exists at ${MODEL_DIR_51}/xarello-qmodel.pth — skipping training."
+else
+    (cd "$XARELLO_ABS" && \
+      python main-train-eval.py "$TASK" "$VICTIM" "$MODEL_DIR_51")
+fi
 
 echo ""
 echo "=== 5.1: Evaluate pre-trained XARELLO — no defense (baseline) ==="
