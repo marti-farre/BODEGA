@@ -3,6 +3,7 @@
 **Branch:** `experiment-4/unicode-canonicalization`
 **Parent:** `main` (after merging experiment-3)
 **Status:** Completed
+**Key finding:** Unicode canonicalization does not defend against VIPER (only -1.2pp). CONFUSABLES_MAP doesn't cover VIPER's homoglyph set. Stochastic oracle confirmed essential for MV.
 **Date:** March 2026
 
 ---
@@ -154,13 +155,17 @@ See `results/experiment-4_unicode-canonicalization/SUMMARY_unicode_defenses.md` 
 
 | Attack | None | Unicode | MV@7 | UC+MV@7 |
 |--------|------|---------|------|---------|
-| BERTattack | 82.5% | — | — | — |
-| PWWS | 87.3% | — | — | — |
-| DeepWordBug | 46.9% | — | — | — |
-| Genetic | 89.9% | — | — | — |
-| VIPER | 26.4% | — | — | — |
+| BERTattack | 82.5% | 82.9% | **30.3%** | **29.8%** |
+| PWWS | 86.5% | 86.5% | **36.3%** | 46.2% |
+| DeepWordBug | 46.9% | 22.4% | 26.2% | **19.0%** |
+| Genetic | 89.9% | 85.6% | **42.8%** | **42.3%** |
+| VIPER | **26.4%** | 25.2% | 30.0% | 29.1% |
 
-*(To be filled after experiments complete)*
+Key findings:
+1. **UC+MV@7 best for DeepWordBug** (-27.9pp) — Unicode strips char noise, MV adds robustness
+2. **Unicode alone irrelevant for word-level attacks** (BERTattack: +0.4pp, PWWS: 0.0pp)
+3. **VIPER: Unicode barely helps** (-1.2pp) — CONFUSABLES_MAP doesn't cover VIPER's homoglyph set
+4. **Stochastic oracle is essential**: deterministic oracle (tested mid-experiment) broke MV entirely for word-level attacks (BERTattack: 30.3% → 90.1% ASR)
 
 ---
 
@@ -168,13 +173,11 @@ See `results/experiment-4_unicode-canonicalization/SUMMARY_unicode_defenses.md` 
 
 | Defense | Source | vs BERTattack | vs VIPER | Utility Cost |
 |---------|--------|---------------|----------|--------------|
-| SpellCheck | Exp 1 | -0.2pp | **+47.4pp** ❌ | +0.4% |
+| SpellCheck | Exp 1 | -0.2pp | +47.4pp ❌ | +0.4% |
 | MV@7 | Exp 3 | **-52.2pp** | +3.6pp ❌ | -0.4% |
-| SpellCheck+MV@7 | Exp 3 | -48.8pp | +14.0pp ❌ | 0.0% |
-| Unicode | **Exp 4** | — | — | — |
-| Unicode+MV@7 | **Exp 4** | — | — | — |
-
-*(To be filled after experiments complete)*
+| SpellCheck+MV@7 | Exp 3 | -48.8pp | +14.0pp ❌ | **0.0%** |
+| Unicode | **Exp 4** | +0.4pp ❌ | -1.2pp | +1.8% |
+| Unicode+MV@7 | **Exp 4** | **-52.7pp** | +2.7pp ❌ | -2.52% |
 
 ---
 
