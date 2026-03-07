@@ -3,7 +3,7 @@
 **Branch (BODEGA):** `experiment-5/xarello`
 **Branch (XARELLO):** `experiment-5/bodega-defenses`
 **Parent:** `main` (after merging experiment-4)
-**Status:** In progress
+**Status:** 5.1 complete; 5.2 pending (needs server)
 **Date:** March 2026
 
 ---
@@ -147,7 +147,21 @@ Based on the threat model analysis:
 
 ## Results
 
-See `results/experiment-5_xarello/` after running the script.
+### 5.1: Pre-trained XARELLO vs SC+MV@7
+
+| Metric | No Defense | SC+MV@7 | Delta |
+|--------|-----------|---------|-------|
+| ASR | 97.3% (71/73) | 37.7% (26/69) | **−59.6pp** |
+| BODEGA score | 0.711 | 0.292 | −0.419 |
+| Queries/example | 28.3 | 17.9 | −10.4 |
+
+SC+MV@7 reduces XARELLO's ASR by 59.6pp — the largest drop of any defense–attacker pair tested across all experiments (beating Genetic's 52.7pp drop). SpellCheck corrects nearly all of XARELLO's character-level edits before the MV oracle votes.
+
+See `results/experiment-5_xarello/SUMMARY_xarello.md` for full analysis.
+
+### 5.2: Adaptive XARELLO
+
+Pending — requires server. Training with SC+MV@7 in loop estimated at ~3 weeks on MacBook (7× slower due to MV copies).
 
 ---
 
