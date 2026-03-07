@@ -34,6 +34,14 @@ OUT_DIR_52="${BODEGA_ABS}/results/experiment-5_xarello/5.2-adaptive"
 
 mkdir -p "$MODEL_DIR_51" "$MODEL_DIR_52" "$OUT_DIR_51" "$OUT_DIR_52"
 
+# XARELLO hardcodes ~/data/BODEGA/<TASK>/ for model and data loading.
+# Create a symlink if the expected path doesn't already exist.
+if [ ! -e "${HOME}/data/BODEGA" ]; then
+    mkdir -p "${HOME}/data"
+    ln -s "${BODEGA_ABS}/data" "${HOME}/data/BODEGA"
+    echo "Created symlink: ~/data/BODEGA -> ${BODEGA_ABS}/data"
+fi
+
 # Both BODEGA and XARELLO must be on PYTHONPATH as absolute paths
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}${BODEGA_ABS}:${XARELLO_ABS}"
 
