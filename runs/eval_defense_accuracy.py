@@ -59,6 +59,10 @@ DEFENSE_CONFIGS = [
     ('spellcheck_mv', 3),
     ('spellcheck_mv', 5),
     ('spellcheck_mv', 7),
+    # Combined defenses (Exp 4)
+    ('unicode_mv', 3),
+    ('unicode_mv', 5),
+    ('unicode_mv', 7),
 ]
 
 DEFENSE_SEED = 42
