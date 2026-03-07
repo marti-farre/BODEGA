@@ -69,6 +69,7 @@ echo "=== 5.1: Evaluate pre-trained XARELLO — no defense (baseline) ==="
 (cd "$XARELLO_ABS" && \
   python evaluation/attack.py \
     --task "$TASK" --victim "$VICTIM" \
+    --model_path "${HOME}/data/BODEGA/${TASK}/${VICTIM}-512.pth" \
     --qmodel_path "${MODEL_DIR_51}/xarello-qmodel.pth" \
     --out_dir "$OUT_DIR_51" \
     --defense none)
@@ -78,6 +79,7 @@ echo "=== 5.1: Evaluate pre-trained XARELLO — SC+MV@7 defense ==="
 (cd "$XARELLO_ABS" && \
   python evaluation/attack.py \
     --task "$TASK" --victim "$VICTIM" \
+    --model_path "${HOME}/data/BODEGA/${TASK}/${VICTIM}-512.pth" \
     --qmodel_path "${MODEL_DIR_51}/xarello-qmodel.pth" \
     --out_dir "$OUT_DIR_51" \
     --defense "$DEFENSE" --defense_param "$DEFENSE_PARAM" --defense_seed "$DEFENSE_SEED")
@@ -99,6 +101,7 @@ echo "=== 5.2: Evaluate adaptive XARELLO — no defense (baseline) ==="
 (cd "$XARELLO_ABS" && \
   python evaluation/attack.py \
     --task "$TASK" --victim "$VICTIM" \
+    --model_path "${HOME}/data/BODEGA/${TASK}/${VICTIM}-512.pth" \
     --qmodel_path "${MODEL_DIR_52}/xarello-qmodel.pth" \
     --out_dir "$OUT_DIR_52" \
     --defense none)
@@ -108,6 +111,7 @@ echo "=== 5.2: Evaluate adaptive XARELLO — SC+MV@7 defense ==="
 (cd "$XARELLO_ABS" && \
   python evaluation/attack.py \
     --task "$TASK" --victim "$VICTIM" \
+    --model_path "${HOME}/data/BODEGA/${TASK}/${VICTIM}-512.pth" \
     --qmodel_path "${MODEL_DIR_52}/xarello-qmodel.pth" \
     --out_dir "$OUT_DIR_52" \
     --defense "$DEFENSE" --defense_param "$DEFENSE_PARAM" --defense_seed "$DEFENSE_SEED")
