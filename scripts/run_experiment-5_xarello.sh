@@ -17,7 +17,10 @@
 
 set -e
 
-XARELLO_DIR="../xarello"
+# Resolve absolute paths before any cd (relative paths break after cd)
+BODEGA_ABS="$(cd "$(dirname "$0")/.." && pwd)"
+XARELLO_ABS="$(cd "${BODEGA_ABS}/../xarello" && pwd)"
+
 TASK="PR2"
 VICTIM="BiLSTM"
 DEFENSE="spellcheck_mv"
@@ -26,12 +29,13 @@ DEFENSE_SEED="42"
 
 MODEL_DIR_51="${HOME}/data/xarello/models/exp5.1/${TASK}-${VICTIM}"
 MODEL_DIR_52="${HOME}/data/xarello/models/exp5.2/${TASK}-${VICTIM}"
-OUT_DIR_51="results/experiment-5_xarello/5.1-pretrained"
-OUT_DIR_52="results/experiment-5_xarello/5.2-adaptive"
+OUT_DIR_51="${BODEGA_ABS}/results/experiment-5_xarello/5.1-pretrained"
+OUT_DIR_52="${BODEGA_ABS}/results/experiment-5_xarello/5.2-adaptive"
 
 mkdir -p "$MODEL_DIR_51" "$MODEL_DIR_52" "$OUT_DIR_51" "$OUT_DIR_52"
 
-export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}.:${XARELLO_DIR}"
+# Both BODEGA and XARELLO must be on PYTHONPATH as absolute paths
+export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}${BODEGA_ABS}:${XARELLO_ABS}"
 
 echo "========================================================"
 echo "Experiment 5: XARELLO Adaptive Attacker vs SC+MV@7"
