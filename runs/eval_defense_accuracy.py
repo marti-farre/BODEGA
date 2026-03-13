@@ -63,6 +63,8 @@ DEFENSE_CONFIGS = [
     ('unicode_mv', 3),
     ('unicode_mv', 5),
     ('unicode_mv', 7),
+    # Discretized output defense (Exp 2.1)
+    ('discretize', 0.0),
 ]
 
 DEFENSE_SEED = 42

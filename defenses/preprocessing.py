@@ -810,6 +810,34 @@ class ConfidencePerturbationDefense(OutputDefenseWrapper):
 
 
 # =============================================================================
+# DISCRETIZED OUTPUT DEFENSE (Experiment 2.1)
+# =============================================================================
+
+
+class DiscretizedProbabilityDefense(OutputDefenseWrapper):
+    """
+    Exp 2.1 / Exp 6: Discretize victim probabilities to hard one-hot labels.
+
+    Instead of returning soft probabilities [0.9, 0.1], returns the hard one-hot
+    of the argmax: [1.0, 0.0]. This removes ALL gradient information from the
+    attacker's oracle while keeping the same prediction (argmax is unchanged).
+
+    Word-level attackers (BERTattack, PWWS, Genetic) rely on probability gradients
+    to find effective word substitutions. With discretized output they only observe
+    binary label flips, which degrades gradient-based search to near-random.
+
+    Note: clean accuracy is identical to the undefended victim (same argmax).
+
+    Based on: experiment-2.1/discretize-probabilities
+    """
+
+    def perturb_prob(self, probs: np.ndarray) -> np.ndarray:
+        """Return hard one-hot of the victim's argmax prediction."""
+        argmax_class = probs.argmax(axis=1)  # (batch_size,)
+        return np.eye(probs.shape[1])[argmax_class]
+
+
+# =============================================================================
 # COMBINED DEFENSES (Experiments 3 & 4)
 # =============================================================================
 
@@ -918,6 +946,8 @@ def get_defense(
                 - 'label_flip': Flip output label with probability P(param)
                 - 'random_threshold': Random decision threshold
                 - 'confidence_noise': Add Gaussian noise to probabilities
+            Discretized output (Exp 6/2.1):
+                - 'discretize': Hard one-hot of victim argmax (removes gradient signal)
             Combined defenses (Exp 3):
                 - 'spellcheck_mv': SpellCheck then MajorityVote
         victim: The classifier to wrap
@@ -957,6 +987,10 @@ def get_defense(
     elif defense_name == 'confidence_noise' or defense_name == 'conf_noise':
         return ConfidencePerturbationDefense(victim, noise_std=param, seed=seed, verbose=verbose)
 
+    # Discretized output defense (Experiment 2.1)
+    elif defense_name == 'discretize' or defense_name == 'disc':
+        return DiscretizedProbabilityDefense(victim, seed=seed, verbose=verbose)
+
     # Combined defenses (Experiment 3)
     elif defense_name == 'spellcheck_mv' or defense_name == 'sc_mv':
         num_copies = int(param) if param > 0 else 7
@@ -970,5 +1004,5 @@ def get_defense(
     else:
         raise ValueError(f"Unknown defense: {defense_name}. "
                         f"Available - Input: none, spellcheck, char_noise, char_masking, identity, "
-                        f"unicode, majority_vote. Output: label_flip, random_threshold, confidence_noise. "
-                        f"Combined: spellcheck_mv, unicode_mv")
+                        f"unicode, majority_vote. Output: label_flip, random_threshold, confidence_noise, "
+                        f"discretize. Combined: spellcheck_mv, unicode_mv")
