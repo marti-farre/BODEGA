@@ -5,8 +5,8 @@
 # Array index mapping: 0→PR2, 1→FC, 2→HN, 3→RD
 
 #SBATCH -J bodega_gemma_train
-#SBATCH -p high
-#SBATCH --gres=gpu:rtx6000:1
+#SBATCH -p medium
+#SBATCH --gres=gpu:l40s:1
 #SBATCH --mem=48G
 #SBATCH -c 4
 #SBATCH --time=14:00:00
