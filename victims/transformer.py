@@ -155,7 +155,7 @@ def train_loop(model, train_dataloader, device, optimizer, lr_scheduler, skip_vi
         optimizer.step()
         lr_scheduler.step()
         optimizer.zero_grad()
-        losses.append(loss.detach().to(torch.device('cpu')).numpy())
+        losses.append(loss.detach().to(torch.device('cpu')).float().numpy())
         progress_bar.update(1)
         if i == MAX_BATCHES:
             break
