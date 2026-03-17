@@ -9,7 +9,7 @@
 #SBATCH --gres=gpu:l40s:1
 #SBATCH --mem=48G
 #SBATCH -c 4
-#SBATCH --time=14:00:00
+#SBATCH --time=8:00:00
 #SBATCH --array=0-3
 #SBATCH -o logs/train_gemma_%A_%a.out
 #SBATCH -e logs/train_gemma_%A_%a.err
