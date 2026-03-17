@@ -209,13 +209,13 @@ with no_ssl_verify():
 attack_time = end - start
 attacker = None
 
-# Save defense modifications if any
-if defended_victim is not None and out_dir:
-    modifications = defended_victim.get_modifications()
-    if modifications:
-        mod_file = out_dir / f'modifications_{task}_{targeted}_{attack}_{victim_model}{defense_suffix}.tsv'
-        defended_victim.save_modifications(str(mod_file))
-        print(f"Saved {len(modifications)} defense modifications to {mod_file}")
+# Modifications TSV saving disabled (files too large for HN/long-text tasks)
+# if defended_victim is not None and out_dir:
+#     modifications = defended_victim.get_modifications()
+#     if modifications:
+#         mod_file = out_dir / f'modifications_{task}_{targeted}_{attack}_{victim_model}{defense_suffix}.tsv'
+#         defended_victim.save_modifications(str(mod_file))
+#         print(f"Saved {len(modifications)} defense modifications to {mod_file}")
 
 # Remove unused stuff
 victim.finalise()
