@@ -19,7 +19,8 @@ from utils.data_mappings import SEPARATOR
 MAX_LEN = 512
 EPOCHS = 5
 MAX_BATCHES = -1
-access_token = 'HF_ACCESS_TOKEN_HERE'
+import os
+access_token = os.environ.get('HF_TOKEN') or os.environ.get('HUGGING_FACE_HUB_TOKEN') or 'HF_ACCESS_TOKEN_HERE'
 PRETRAINED_BERT = "bert-base-uncased"
 PRETRAINED_GEMMA_2B = "google/gemma-2b"
 PRETRAINED_GEMMA_7B = "google/gemma-7b"
