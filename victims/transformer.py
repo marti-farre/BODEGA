@@ -210,9 +210,7 @@ def train_and_save(data_path, out_path, device, task, pretrained_model, using_pe
         if out_path.exists():
             shutil.rmtree(out_path)
         out_path.mkdir()
-        huggingface_hub.login(token=access_token)
         model.save_pretrained(out_path)
-        huggingface_hub.logout()
 
 
 class VictimTransformer(OpenAttack.Classifier):
