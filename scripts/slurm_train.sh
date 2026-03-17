@@ -8,7 +8,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=32G
 #SBATCH -c 4
-#SBATCH --time=14:00
+#SBATCH --time=8:00:00
 #SBATCH --array=0-7
 #SBATCH -o logs/train_%A_%a.out
 #SBATCH -e logs/train_%A_%a.err
@@ -30,8 +30,10 @@ module load Miniconda3
 eval "$(conda shell.bash hook)"
 conda activate bodega
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}."
-export HUGGING_FACE_HUB_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null || echo "")
-export HF_TOKEN=$HUGGING_FACE_HUB_TOKEN
+HF_TOKEN_VALUE=$(cat ~/.cache/huggingface/token 2>/dev/null || echo "")
+export HF_TOKEN=$HF_TOKEN_VALUE
+export HUGGING_FACE_HUB_TOKEN=$HF_TOKEN_VALUE
+echo "HF token loaded: ${HF_TOKEN_VALUE:0:8}..."
 
 echo "Training $VICTIM on $TASK → $MODEL_PATH"
 python runs/train_victims.py "$TASK" "$VICTIM" "data/$TASK" "$MODEL_PATH"
