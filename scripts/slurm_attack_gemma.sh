@@ -8,11 +8,11 @@
 # Index: i = task_idx*112 + attacker_idx*28 + defense_idx
 
 #SBATCH -J bodega_gemma
-#SBATCH -p high
-#SBATCH --gres=gpu:rtx6000:1
+#SBATCH -p medium
+#SBATCH --gres=gpu:l40s:1
 #SBATCH --mem=48G
 #SBATCH -c 4
-#SBATCH --time=14:00
+#SBATCH --time=8:00:00
 #SBATCH --array=0-447
 #SBATCH -o logs/attack_gemma_%A_%a.out
 #SBATCH -e logs/attack_gemma_%A_%a.err
@@ -51,6 +51,9 @@ module load Miniconda3
 eval "$(conda shell.bash hook)"
 conda activate bodega
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}."
+HF_TOKEN_VALUE=$(cat ~/.cache/huggingface/token 2>/dev/null || echo "")
+export HF_TOKEN=$HF_TOKEN_VALUE
+export HUGGING_FACE_HUB_TOKEN=$HF_TOKEN_VALUE
 mkdir -p "$OUT_DIR" logs
 
 echo "[$i] GEMMA | $TASK | $ATTACK | $DEFENSE (param=$PARAM)"
