@@ -234,7 +234,8 @@ class VictimTransformer(OpenAttack.Classifier):
                                                                             quantization_config=quantization_config,
                                                                             token=access_token)
             self.model = PeftModel.from_pretrained(self.model, path)
-        self.model.to(device)
+        if not (using_peft and device.type == 'cuda'):
+            self.model.to(device)
         self.model.eval()
         self.tokenizer = AutoTokenizer.from_pretrained(pretrained_model, token=access_token)
         self.with_pairs = (task == 'FC' or task == 'C19')
