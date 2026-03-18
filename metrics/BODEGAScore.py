@@ -70,7 +70,7 @@ class BODEGAScore(OpenAttack.AttackMetric):
                 SS_guide[-1].append(len(SS_sentences))
                 SS_sentences.append((self.normalise_for_bert(sent1), self.normalise_for_bert(sent2)))
         
-        sentence_similarity = self.semantic_similarity(SS_sentences)
+        sentence_similarity = self.semantic_similarity(SS_sentences) if SS_sentences else []
         B_scores = []
         semantic_scores = []
         character_scores = []
