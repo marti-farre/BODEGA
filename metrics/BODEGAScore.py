@@ -8,8 +8,6 @@ import numpy
 import torch
 from OpenAttack.text_process.tokenizer.punct_tokenizer import PunctTokenizer
 from bert_score import score
-# Install via pip install git+https://github.com/lucadiliello/bleurt-pytorch.git
-from bleurt_pytorch import BleurtConfig, BleurtForSequenceClassification, BleurtTokenizer
 import difflib
 
 from metrics.ScorePromise import ScorePromise
@@ -30,6 +28,7 @@ class BODEGAScore(OpenAttack.AttackMetric):
         if semantic_scorer == "BERTscore":
             pass
         elif semantic_scorer == "BLEURT":
+            from bleurt_pytorch import BleurtConfig, BleurtForSequenceClassification, BleurtTokenizer
             config = BleurtConfig.from_pretrained('lucadiliello/BLEURT-20')
             self.bleurt_model = BleurtForSequenceClassification.from_pretrained('lucadiliello/BLEURT-20').to(device)
             self.bleurt_tokenizer = BleurtTokenizer.from_pretrained('lucadiliello/BLEURT-20')
