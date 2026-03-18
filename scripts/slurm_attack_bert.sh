@@ -11,7 +11,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=32G
 #SBATCH -c 4
-#SBATCH --time=8:00
+#SBATCH --time=8:00:00
 #SBATCH --array=0-447
 #SBATCH -o logs/attack_bert_%A_%a.out
 #SBATCH -e logs/attack_bert_%A_%a.err
