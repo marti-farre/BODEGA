@@ -55,6 +55,9 @@ parser.add_argument('--defense_seed', type=int, default=42,
                     help='Random seed for defense (for reproducibility)')
 parser.add_argument('--verbose', action='store_true',
                     help='Print defense modifications as they happen')
+parser.add_argument('--semantic_scorer', type=str, default='BERTscore',
+                    choices=['BERTscore', 'BLEURT'],
+                    help='Semantic similarity scorer for BODEGA metric')
 
 # Check if using legacy positional args or new named args
 if len(sys.argv) >= 7 and not sys.argv[1].startswith('--'):
@@ -78,6 +81,9 @@ if len(sys.argv) >= 7 and not sys.argv[1].startswith('--'):
         defense_param = args.defense_param
         defense_seed = args.defense_seed
         verbose = args.verbose
+        semantic_scorer = args.semantic_scorer
+    else:
+        semantic_scorer = 'BERTscore'
 
 # Build output filename including defense info
 defense_suffix = ''
@@ -198,8 +204,7 @@ print("Evaluating the attack...")
 RAW_FILE_NAME = f'raw_{task}_{targeted}_{attack}_{victim_model}{defense_suffix}.tsv'
 raw_path = None  # Don't save raw attack details (saves disk space)
 with no_ssl_verify():
-    # Use BERTscore instead of BLEURT (BLEURT causes mutex crash on macOS)
-    scorer = BODEGAScore(victim_device, task, align_sentences=True, semantic_scorer="BERTscore", raw_path=raw_path)
+    scorer = BODEGAScore(victim_device, task, align_sentences=True, semantic_scorer=semantic_scorer, raw_path=raw_path)
     attack_eval = OpenAttack.AttackEval(attacker, victim, language='english', metrics=[
         scorer  # , OpenAttack.metric.EditDistance()
     ])
@@ -266,6 +271,7 @@ if out_dir:
         f.write(f"Defense: {defense_type}\n")
         f.write(f"Defense param: {defense_param}\n")
         f.write(f"Defense seed: {defense_seed}\n")
+        f.write(f"Semantic scorer: {semantic_scorer}\n")
         f.write("\n# Results\n")
         f.write("Subset size: " + str(len(dataset)) + '\n')
         f.write("Success score: " + str(score_success) + '\n')
