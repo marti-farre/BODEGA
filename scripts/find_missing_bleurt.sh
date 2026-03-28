@@ -37,13 +37,18 @@ for i in $(seq 0 447); do
     DEFENSE=${DEF_ENTRY%%:*}
     PARAM=${DEF_ENTRY##*:}
 
+    # Convert PARAM to match Python's float formatting:
+    # - "0.10" -> "0.1", "0.20" -> "0.2" (trailing zero dropped)
+    # - "3" -> "3.0", "5" -> "5.0", "7" -> "7.0" (integer gets .0)
+    PYPARAM=$(python3 -c "print(float('$PARAM'))" 2>/dev/null || echo "$PARAM")
+
     # Build expected result filename (matches attack.py naming)
     if [ "$DEFENSE" = "none" ]; then
         RESULT_FILE="${OUT_DIR}/results_${TASK}_False_${ATTACK}_${VICTIM}.txt"
     elif [ "$PARAM" = "0" ]; then
         RESULT_FILE="${OUT_DIR}/results_${TASK}_False_${ATTACK}_${VICTIM}_${DEFENSE}.txt"
     else
-        RESULT_FILE="${OUT_DIR}/results_${TASK}_False_${ATTACK}_${VICTIM}_${DEFENSE}_${PARAM}.txt"
+        RESULT_FILE="${OUT_DIR}/results_${TASK}_False_${ATTACK}_${VICTIM}_${DEFENSE}_${PYPARAM}.txt"
     fi
 
     total=$((total + 1))
