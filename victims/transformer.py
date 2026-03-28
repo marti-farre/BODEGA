@@ -263,7 +263,7 @@ class VictimTransformer(OpenAttack.Classifier):
                 with torch.no_grad():
                     tokenised = {k: v.to(self.device) for k, v in tokenised.items()}
                     outputs = self.model(**tokenised)
-                probs_here = torch.nn.functional.softmax(outputs.logits, dim=-1).to(torch.device('cpu')).numpy()
+                probs_here = torch.nn.functional.softmax(outputs.logits, dim=-1).float().cpu().numpy()
                 if probs is not None:
                     probs = numpy.concatenate((probs, probs_here))
                 else:
