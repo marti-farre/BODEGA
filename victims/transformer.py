@@ -232,6 +232,7 @@ class VictimTransformer(OpenAttack.Classifier):
             assert config.base_model_name_or_path == pretrained_model
             self.model = AutoModelForSequenceClassification.from_pretrained(pretrained_model,
                                                                             quantization_config=quantization_config,
+                                                                            device_map="auto" if quantization_config else None,
                                                                             token=access_token)
             self.model = PeftModel.from_pretrained(self.model, path)
         if not (using_peft and device.type == 'cuda'):

@@ -8,7 +8,7 @@
 #SBATCH -J bleurt_bert
 #SBATCH -p medium
 #SBATCH --gres=gpu:1
-#SBATCH --mem=32G
+#SBATCH --mem=48G
 #SBATCH -c 4
 #SBATCH --array=0-447
 #SBATCH -o logs/bleurt_bert_%A_%a.out
