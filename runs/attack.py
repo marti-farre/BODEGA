@@ -58,6 +58,8 @@ parser.add_argument('--verbose', action='store_true',
 parser.add_argument('--semantic_scorer', type=str, default='BERTscore',
                     choices=['BERTscore', 'BLEURT'],
                     help='Semantic similarity scorer for BODEGA metric')
+parser.add_argument('--max_queries', type=int, default=0,
+                    help='Max queries per example (0=unlimited). Recommended: 500 for HN')
 
 # Check if using legacy positional args or new named args
 if len(sys.argv) >= 7 and not sys.argv[1].startswith('--'):
@@ -82,8 +84,10 @@ if len(sys.argv) >= 7 and not sys.argv[1].startswith('--'):
         defense_seed = args.defense_seed
         verbose = args.verbose
         semantic_scorer = args.semantic_scorer
+        max_queries = args.max_queries
     else:
         semantic_scorer = 'BERTscore'
+        max_queries = 0
 
 # Build output filename including defense info
 defense_suffix = ''
@@ -198,6 +202,12 @@ with no_ssl_verify():
         attacker = OpenAttack.attackers.BAEAttacker(device=attacker_device, filter_words=filter_words)
     else:
         attacker = None
+
+# Wrap with query limiter if specified
+if max_queries > 0 and attacker is not None:
+    from utils.limited_attacker import LimitedAttacker
+    print(f"Limiting attacker to {max_queries} queries per example")
+    attacker = LimitedAttacker(attacker, max_queries)
 
 # Run the attack
 print("Evaluating the attack...")
