@@ -21,13 +21,13 @@ MAX_QUERIES=500
 # Top 8 defenses (accuracy-penalized ranking from BiLSTM BLEURT results)
 DEFENSES=(
     none:0
-    spellcheck:0
-    unicode:0
     discretize:0
+    spellcheck:0
     label_flip:0.05
-    majority_vote:7
+    confidence_noise:0.10
+    spellcheck_mv:3
     spellcheck_mv:7
-    unicode_mv:7
+    majority_vote:7
 )
 
 i=$SLURM_ARRAY_TASK_ID
