@@ -25,6 +25,13 @@ ACCURACY_DIR = Path('results/experiment-7_bleurt')  # clean_accuracy files are h
 TASKS = ['PR2', 'FC', 'HN', 'RD']
 ATTACKERS = ['BERTattack', 'PWWS', 'DeepWordBug', 'Genetic']
 
+# Defense names that can appear in filenames (longest first for greedy matching)
+KNOWN_DEFENSES = sorted([
+    'char_noise', 'char_masking', 'majority_vote', 'label_flip',
+    'random_threshold', 'confidence_noise', 'spellcheck_mv', 'unicode_mv',
+    'spellcheck', 'unicode', 'discretize',
+], key=len, reverse=True)
+
 
 def parse_bodega_score(filepath):
     """Extract BODEGA score from result file."""
@@ -88,12 +95,22 @@ for fname in sorted(RESULTS_DIR.glob(f'results_*_{VICTIM}*.txt')):
     task = parts[1]
     attacker = parts[3]
 
-    if len(parts) > victim_idx + 1:
-        defense = parts[victim_idx + 1]
-        param = parts[victim_idx + 2] if len(parts) > victim_idx + 2 else '0'
-    else:
-        defense = 'none'
-        param = '0'
+    # Join remaining parts after victim and match against known defense names
+    remaining = '_'.join(parts[victim_idx + 1:])
+    defense = 'none'
+    param = '0'
+    if remaining:
+        for d in KNOWN_DEFENSES:
+            if remaining == d:
+                defense = d
+                break
+            elif remaining.startswith(d + '_'):
+                defense = d
+                param = remaining[len(d) + 1:]
+                break
+        else:
+            # Unknown defense — use as-is
+            defense = remaining
 
     score = parse_bodega_score(fname)
     if score is not None:
