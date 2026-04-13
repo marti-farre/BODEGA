@@ -20,7 +20,7 @@ from pathlib import Path
 
 VICTIM = sys.argv[1] if len(sys.argv) > 1 else 'BiLSTM'
 RESULTS_DIR = Path('results/experiment-7_bleurt')
-ACCURACY_DIR = Path('results/clean_accuracy')
+ACCURACY_DIR = Path('results/experiment-7_bleurt')  # clean_accuracy files are here too
 
 TASKS = ['PR2', 'FC', 'HN', 'RD']
 ATTACKERS = ['BERTattack', 'PWWS', 'DeepWordBug', 'Genetic']
@@ -91,11 +91,17 @@ for fname in sorted(RESULTS_DIR.glob(f'results_*_{VICTIM}*.txt')):
         bodega_by_task[key][task].append(score)
 
 # Collect clean accuracy per defense
+# Files are named: clean_accuracy_TASK_VICTIM.txt
+# They may contain per-defense lines or single defense results
+accuracy_per_task = defaultdict(lambda: defaultdict(list))  # defense_key -> task -> [acc]
 accuracy_data = {}
-for fname in sorted(ACCURACY_DIR.glob(f'*{VICTIM}*.txt')):
+
+for fname in sorted(ACCURACY_DIR.glob(f'clean_accuracy_*{VICTIM}*.txt')):
+    task_from_fname = fname.stem.replace('clean_accuracy_', '').replace(f'_{VICTIM}', '')
     with open(fname) as f:
         content = f.read()
-    # Try to extract defense name and accuracy
+
+    # Format 1: Single defense per file with "Defense: X", "Accuracy: X"
     defense_match = re.search(r'Defense: (\S+)', content)
     param_match = re.search(r'Param: (\S+)', content)
     acc_match = re.search(r'Accuracy: ([\d.]+)', content)
@@ -105,28 +111,25 @@ for fname in sorted(ACCURACY_DIR.glob(f'*{VICTIM}*.txt')):
         defense = defense_match.group(1) if defense_match else 'none'
         param = param_match.group(1) if param_match else '0'
         key = get_defense_key(defense, param)
-        accuracy_data[key] = {
-            'accuracy': float(acc_match.group(1)),
-            'f1': float(f1_match.group(1)) if f1_match else None
-        }
+        acc_val = float(acc_match.group(1))
+        accuracy_per_task[key][task_from_fname].append(acc_val)
 
-# If no clean accuracy files found, try to parse from eval_defense_accuracy results
-if not accuracy_data:
-    for fname in sorted(ACCURACY_DIR.glob(f'*{VICTIM}*.txt')):
-        try:
-            with open(fname) as f:
-                for line in f:
-                    line = line.strip()
-                    if 'accuracy' in line.lower() and ':' in line:
-                        parts_l = line.split(':')
-                        if len(parts_l) >= 2:
-                            try:
-                                val = float(parts_l[-1].strip().rstrip('%'))
-                                print(f"  Found accuracy {val} in {fname.name}")
-                            except ValueError:
-                                pass
-        except Exception:
-            pass
+    # Format 2: Multi-defense table (defense, param, accuracy per line)
+    for line in content.splitlines():
+        m = re.match(r'(\S+)\s+(\S+)\s+([\d.]+)\s+([\d.]+)', line)
+        if m:
+            defense, param, acc_val, f1_val = m.group(1), m.group(2), float(m.group(3)), float(m.group(4))
+            key = get_defense_key(defense, param)
+            accuracy_per_task[key][task_from_fname].append(acc_val)
+
+# Average accuracy across tasks for each defense
+for key, task_accs in accuracy_per_task.items():
+    all_accs = [a for accs in task_accs.values() for a in accs]
+    if all_accs:
+        accuracy_data[key] = {
+            'accuracy': sum(all_accs) / len(all_accs),
+            'per_task': {t: sum(a)/len(a) for t, a in task_accs.items()}
+        }
 
 # Print ranking
 print(f"\n{'='*80}")
