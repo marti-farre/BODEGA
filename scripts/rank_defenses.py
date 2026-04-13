@@ -50,11 +50,22 @@ def parse_clean_accuracy(filepath):
     return None
 
 
+def normalize_param(param):
+    """Normalize param to consistent string: '-' and '0' -> '0', '7.00' -> '7.0'."""
+    if param in ('-', '', None):
+        return '0'
+    try:
+        return str(float(param))
+    except ValueError:
+        return param
+
+
 def get_defense_key(defense, param):
     """Build human-readable defense key."""
     if defense == 'none':
         return 'none'
-    if param in (0.0, 0, '0', '0.0'):
+    param = normalize_param(param)
+    if param in ('0.0', '0'):
         return defense
     return f'{defense}_{param}'
 
@@ -94,6 +105,7 @@ for fname in sorted(RESULTS_DIR.glob(f'results_*_{VICTIM}*.txt')):
 # Files are named: clean_accuracy_TASK_VICTIM.txt
 # They may contain per-defense lines or single defense results
 accuracy_per_task = defaultdict(lambda: defaultdict(list))  # defense_key -> task -> [acc]
+f1_per_task = defaultdict(lambda: defaultdict(list))  # defense_key -> task -> [f1]
 accuracy_data = {}
 
 for fname in sorted(ACCURACY_DIR.glob(f'clean_accuracy_*{VICTIM}*.txt')):
@@ -114,15 +126,18 @@ for fname in sorted(ACCURACY_DIR.glob(f'clean_accuracy_*{VICTIM}*.txt')):
         acc_val = float(acc_match.group(1))
         accuracy_per_task[key][task_from_fname].append(acc_val)
 
-    # Format 2: Multi-defense table (defense, param, accuracy per line)
+    # Format 2: Multi-defense table (defense, param, accuracy, f1 per line)
     for line in content.splitlines():
         m = re.match(r'(\S+)\s+(\S+)\s+([\d.]+)\s+([\d.]+)', line)
         if m:
-            defense, param, acc_val, f1_val = m.group(1), m.group(2), float(m.group(3)), float(m.group(4))
+            defense, param = m.group(1), m.group(2)
+            acc_val, f1_val = float(m.group(3)), float(m.group(4))
             key = get_defense_key(defense, param)
             accuracy_per_task[key][task_from_fname].append(acc_val)
+            f1_per_task[key][task_from_fname].append(f1_val)
 
-# Average accuracy across tasks for each defense
+# Average accuracy and F1 across tasks for each defense
+f1_data = {}
 for key, task_accs in accuracy_per_task.items():
     all_accs = [a for accs in task_accs.values() for a in accs]
     if all_accs:
@@ -130,54 +145,62 @@ for key, task_accs in accuracy_per_task.items():
             'accuracy': sum(all_accs) / len(all_accs),
             'per_task': {t: sum(a)/len(a) for t, a in task_accs.items()}
         }
+for key, task_f1s in f1_per_task.items():
+    all_f1s = [f for f1s in task_f1s.values() for f in f1s]
+    if all_f1s:
+        f1_data[key] = sum(all_f1s) / len(all_f1s)
 
 # Print ranking
 print(f"\n{'='*80}")
-print(f"DEFENSE RANKING — {VICTIM} (accuracy-penalized BODEGA score)")
+print(f"DEFENSE RANKING — {VICTIM} (F1-penalized BODEGA score)")
 print(f"{'='*80}")
-print(f"{'Defense':<25s} {'Avg BODEGA':>10s} {'Clean Acc':>10s} "
-      f"{'Effective':>10s} {'N results':>10s}")
-print(f"{'-'*25} {'-'*10} {'-'*10} {'-'*10} {'-'*10}")
+print(f"{'Defense':<25s} {'Avg BODEGA':>10s} {'Clean Acc':>10s} {'Clean F1':>10s} "
+      f"{'Eff(Acc)':>10s} {'Eff(F1)':>10s} {'N results':>10s}")
+print(f"{'-'*25} {'-'*10} {'-'*10} {'-'*10} {'-'*10} {'-'*10} {'-'*10}")
 
 rankings = []
 for key in sorted(bodega_scores.keys()):
     scores = bodega_scores[key]
     avg_bodega = sum(scores) / len(scores)
     acc = accuracy_data.get(key, {}).get('accuracy')
-    if acc is not None:
-        effective = acc * (1 - avg_bodega)
-    else:
-        effective = 1.0 * (1 - avg_bodega)  # assume perfect accuracy if unknown
-    rankings.append((key, avg_bodega, acc, effective, len(scores)))
+    f1 = f1_data.get(key)
+    eff_acc = (acc if acc is not None else 1.0) * (1 - avg_bodega)
+    eff_f1 = (f1 if f1 is not None else 1.0) * (1 - avg_bodega)
+    rankings.append((key, avg_bodega, acc, f1, eff_acc, eff_f1, len(scores)))
 
-# Sort by effective score (higher = better defense)
-rankings.sort(key=lambda x: x[3], reverse=True)
+# Sort by F1-based effective score (higher = better defense)
+rankings.sort(key=lambda x: x[5], reverse=True)
 
-for key, avg_b, acc, eff, n in rankings:
+for key, avg_b, acc, f1, eff_a, eff_f, n in rankings:
     acc_str = f'{acc:.4f}' if acc is not None else '?'
-    print(f'{key:<25s} {avg_b:>10.4f} {acc_str:>10s} {eff:>10.4f} {n:>10d}')
+    f1_str = f'{f1:.4f}' if f1 is not None else '?'
+    print(f'{key:<25s} {avg_b:>10.4f} {acc_str:>10s} {f1_str:>10s} {eff_a:>10.4f} {eff_f:>10.4f} {n:>10d}')
 
 # Print per-task breakdown for top 5
 print(f"\n{'='*80}")
 print("TOP 5 — Per-task BODEGA scores")
 print(f"{'='*80}")
-for key, avg_b, acc, eff, n in rankings[:5]:
-    print(f"\n  {key} (effective={eff:.4f}):")
+for key, avg_b, acc, f1, eff_a, eff_f, n in rankings[:5]:
+    print(f"\n  {key} (eff_acc={eff_a:.4f}, eff_f1={eff_f:.4f}):")
     for task in TASKS:
         task_scores = bodega_by_task[key].get(task, [])
         if task_scores:
-            print(f"    {task}: avg={sum(task_scores)/len(task_scores):.4f} "
-                  f"(n={len(task_scores)})")
+            task_acc = accuracy_data.get(key, {}).get('per_task', {}).get(task)
+            acc_info = f", clean_acc={task_acc:.4f}" if task_acc else ""
+            print(f"    {task}: avg_bodega={sum(task_scores)/len(task_scores):.4f} "
+                  f"(n={len(task_scores)}){acc_info}")
 
 # Recommend best defense for XARELLO
 print(f"\n{'='*80}")
 print("RECOMMENDATION for XARELLO experiments")
 print(f"{'='*80}")
 if rankings:
-    # Best overall (excluding 'none')
     best_non_none = [r for r in rankings if r[0] != 'none']
     if best_non_none:
-        print(f"  Best defense: {best_non_none[0][0]}")
-        print(f"    Avg BODEGA: {best_non_none[0][1]:.4f}")
-        print(f"    Clean accuracy: {best_non_none[0][2]}")
-        print(f"    Effective score: {best_non_none[0][3]:.4f}")
+        r = best_non_none[0]
+        print(f"  Best defense: {r[0]}")
+        print(f"    Avg BODEGA: {r[1]:.4f}")
+        print(f"    Clean accuracy: {r[2]}")
+        print(f"    Clean F1: {r[3]}")
+        print(f"    Effective (acc): {r[4]:.4f}")
+        print(f"    Effective (F1):  {r[5]:.4f}")
