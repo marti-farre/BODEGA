@@ -6,8 +6,8 @@
 # Submit with: cd ~/BODEGA && sbatch scripts/slurm_bleurt_gemma_top8.sh
 
 #SBATCH -J gem_top8
-#SBATCH -p medium
-#SBATCH --gres=gpu:l40s:1
+#SBATCH -p high
+#SBATCH --gres=gpu:1
 #SBATCH --mem=48G
 #SBATCH -c 4
 #SBATCH --array=0-127
