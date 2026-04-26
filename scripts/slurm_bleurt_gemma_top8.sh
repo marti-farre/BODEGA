@@ -41,8 +41,7 @@ PARAM=${DEF_ENTRY##*:}
 MODEL_PATH="data/$TASK/GEMMA-512"
 OUT_DIR="results/experiment-7_bleurt"
 
-module load Miniconda3
-eval "$(conda shell.bash hook)"
+source /soft/easybuild/x86_64/software/Miniconda3/22.11.1-1/etc/profile.d/conda.sh
 conda activate bodega
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}."
 mkdir -p "$OUT_DIR" logs
