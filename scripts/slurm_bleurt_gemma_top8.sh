@@ -8,6 +8,7 @@
 #SBATCH -J gem_top8
 #SBATCH -p high
 #SBATCH --gres=gpu:1
+#SBATCH --constraint=cuda
 #SBATCH --mem=48G
 #SBATCH -c 4
 #SBATCH --array=0-127
