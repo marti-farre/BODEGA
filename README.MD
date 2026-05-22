@@ -1,5 +1,24 @@
 # BODEGA: Benchmark for Adversarial Example Generation in Credibility Assessment
 
+> **About this fork.** This is the BODEGA fork used by the paper
+> *"Fight Fire with Fire: Adaptive Black-Box Defences for Misinformation Detection"*
+> (M. Farré, P. Przybyła; under review at EMNLP 2026). It extends upstream BODEGA
+> with a library of black-box preprocessing defences and the
+> attack-time hooks needed to wrap them around any OpenAttack-style victim.
+>
+> The full reproduction stack spans three sibling repositories:
+>
+> | Repo | Role |
+> |------|------|
+> | [`BODEGA`](https://github.com/marti-farre/BODEGA) (this repo) | Benchmark + victim classifiers + static preprocessing defences |
+> | [`macabeu`](https://github.com/marti-farre/macabeu) | RL meta-defender that selects a static defence per example |
+> | [`xarello`](https://github.com/marti-farre/xarello) | RL-based adaptive attacker (Przybyła et al., WASSA 2024) |
+>
+> The three repos are expected to be cloned as siblings:
+> `BODEGA/`, `macabeu/`, `xarello/`. See the *Fork extensions* section below for the
+> defences added in this fork, and `macabeu/README.md` for the end-to-end
+> reproduction recipe of the paper's headline numbers.
+
 This repository contains the BODEGA benchmark for evaluating the robustness of text classifiers, i.e. their ability to
 maintain the correct prediction for test examples that were modified by a malicious attacker. BODEGA is using tasks
 related to the detection of misinformation and aims to simulate the real usecase of social media platforms
@@ -194,6 +213,82 @@ Two of the clear extensions are:
 - Testing the performance of your own attack method. In order to do that, you need to implement
   the `OpenAttack.attackers.ClassificationAttacker` interface. See an example in
   the [OpenAttack manual](https://openattack.readthedocs.io/en/latest/examples/example3.html).
+
+## Fork extensions (paper-specific)
+
+The following components are added in this fork on top of upstream BODEGA.
+
+### Black-box preprocessing defences
+
+[`defenses/preprocessing.py`](defenses/preprocessing.py) defines a `DefenseWrapper` base class
+that wraps any `OpenAttack.Classifier` victim with a per-query input or output
+transformation. The action library exposed to MACABEU is:
+
+| Action | Transformation |
+|--------|----------------|
+| `none` | identity (baseline) |
+| `spellcheck` | SymSpell correction against an 80k-word English dictionary |
+| `unicode` | Unicode confusables → canonical ASCII |
+| `discretize` | quantise the victim's output probability (output-side only) |
+| `majority_vote@k` | run *k* noisy copies, return the majority vote (k ∈ {3, 7}) |
+| `spellcheck_mv@3` | spellcheck + 3× majority vote |
+| `char_noise@0.10` | replace 10% of characters with Unicode homoglyphs |
+
+The defence is selected at evaluation time via the `--defense` / `--defense_param`
+flags of `runs/attack.py` (see `CLAUDE.md` for invocation examples). MACABEU
+plugs into the same surface by selecting one of these actions per example
+through its `defense_selector` / `online_selector` interface.
+
+### Reproducing the paper
+
+The end-to-end recipe lives in
+[`macabeu/README.md`](https://github.com/marti-farre/macabeu#reproducing-the-paper)
+because the headline experiments depend on all three repos. As a one-line
+summary, the pipeline is:
+
+1. Train the four BODEGA victim classifiers per task (BiLSTM, BERT, Gemma) using
+   `runs/train_victims.py` (this repo).
+2. Generate the MACABEU offline policy from BODEGA's attack split via
+   `macabeu/runs/generate_defense_data.py` → `macabeu/runs/train_defense_agent.py`.
+3. Run the static defences and MACABEU offline/online against each attacker
+   (DeepWordBug, PWWS, BERT-Attack, Genetic, and XARELLO) using
+   `runs/attack.py` (this repo) and `macabeu/runs/eval_*` for MACABEU rows.
+4. Aggregate BODEGA scores with the table-generation scripts in
+   [`paper_assets/`](paper_assets/).
+
+### Released artefacts in this repo
+
+* `defenses/preprocessing.py` — the static defence library above.
+* `paper_assets/` — scripts that regenerate every table and figure in the
+  paper from the raw results directories (`make_results_table.py`,
+  `make_pareto_scatter.py`, `make_action_gallery.py`, etc.).
+* `scripts/slurm_*` — the SLURM job harnesses used on the cluster (single A40/L40s
+  GPU, BODEGA ran in ~3,400 GPU-hours total).
+
+## Citation
+
+If you use this fork (or the MACABEU defender / XARELLO attacker built around
+it) in your own work, please cite both the original BODEGA paper and ours:
+
+```bibtex
+@article{przybyla2024verifying,
+  title   = {Verifying the robustness of automatic credibility assessment},
+  author  = {Przyby{\l}a, Piotr and Shvets, Alexander and Saggion, Horacio},
+  journal = {Natural Language Processing},
+  volume  = {31},
+  number  = {5},
+  pages   = {1134--1162},
+  year    = {2024},
+  doi     = {10.1017/nlp.2024.54}
+}
+
+@misc{farre2026fightfire,
+  title  = {Fight Fire with Fire: Adaptive Black-Box Defences for Misinformation Detection},
+  author = {Farr{\'e} Farr{\'u}s, Mart{\'\i} and Przyby{\l}a, Piotr},
+  year   = {2026},
+  note   = {Under review.}
+}
+```
 
 ## Licence
 
