@@ -24,8 +24,8 @@ import matplotlib.pyplot as plt
 VARIANT_ORDER = ["offline", "oracle", "est_hard"]
 VARIANT_LABELS = {
     "offline":  "MACABEU-off",
-    "oracle":   "MACABEU-on\n(oracle)",
-    "est_hard": "MACABEU-on\n(est, hard)",
+    "oracle":   "MACABEU-\noracle",
+    "est_hard": "MACABEU-\nestimated",
 }
 
 FEATURE_ORDER = [

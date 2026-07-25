@@ -34,8 +34,8 @@ DEFENSES = [
     ("sc\\_mv@3",                  "spellcheck_mv@3"),
     ("char\\_noise@0.1",           "char_noise@0.1"),
     ("MACABEU-off",                "__macabeu_off__"),
-    ("MACABEU-on (oracle)",        "__macabeu_online_oracle_hard__"),
-    ("MACABEU-on (mv7, hard)",     "__macabeu_online_mv7_hard__"),
+    ("MACABEU-oracle",             "__macabeu_online_oracle_hard__"),
+    ("MACABEU-estimated",          "__macabeu_online_mv7_hard__"),
 ]
 
 

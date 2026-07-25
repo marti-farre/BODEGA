@@ -39,10 +39,10 @@ STATIC_DEFENCES = [
     ("char\\_noise@0.1", "_char_noise_0.1"),
 ]
 MACABEU_ROWS = [
-    ("MACABEU-off",              "macabeu_off"),
-    ("MACABEU-on (oracle)",      "macabeu_oracle"),
-    ("MACABEU-on (mv7, soft)",   "macabeu_on_soft"),
-    ("MACABEU-on (mv7, hard)",   "macabeu_on_hard"),
+    ("MACABEU-off",                 "macabeu_off"),
+    ("MACABEU-oracle",              "macabeu_oracle"),
+    ("MACABEU-estimated (soft)",    "macabeu_on_soft"),
+    ("MACABEU-estimated",           "macabeu_on_hard"),
 ]
 DEFENCES = STATIC_DEFENCES + MACABEU_ROWS
 
