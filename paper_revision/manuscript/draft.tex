@@ -1,0 +1,383 @@
+\documentclass[11pt]{article}
+
+\usepackage[review]{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tikz,amsmath,amssymb}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,calc}
+\usepackage[normalem]{ulem}
+\usepackage{soul}
+% disabling highlighting
+%\renewcommand\hl[1]{#1}
+
+\title{Fight Fire with Fire: Adaptive Black-Box Defences for Misinformation Detection}
+
+\author{\textbf{Martí Farré Farrús}\textsuperscript{\textnormal{1}} \and 
+        \textbf{Piotr Przyby{\l}a}\textsuperscript{\textnormal{1,2}}\\
+  \textsuperscript{\textnormal{1}} Universitat Pompeu Fabra, Barcelona, Spain \\
+  \textsuperscript{\textnormal{2}} Institute of Computer Science, Polish Academy of Sciences, Warsaw, Poland  \\
+  {\tt piotr.przybyla@upf.edu} 
+ }
+
+\begin{document}
+\maketitle
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figs/fig_headline.pdf}
+  
+  \caption{\textbf{Headline result.} \hl{Attack success (BODEGA score) of the pre-trained adaptive attacker against an undefended victim and with offline or online (estimated or oracle) MACABEU defender, across four tasks and three victims.}}
+  \label{fig:headline}
+\end{figure*}
+\begin{abstract}
+Text classifiers used to filter misinformation are vulnerable to adversarial examples, but most existing defences require white-box access to the victim model. We present the first systematic comparison of black-box preprocessing defences for credibility assessment, evaluating twelve techniques across four tasks, three victim architectures, and five attackers --- including the adaptive reinforcement-learning attacker. We then introduce MACABEU, a reinforcement-learning meta-defender that selects which static defence to deploy for a given example, in both an offline (frozen-policy) and an online (continually-updated) regimes. Our experiments show that simple static defences, when chosen well, already neutralise non-adaptive attackers; that adaptive attackers re-establish a substantial threat against any single static defence; and that an adaptive defender recovers most of the lost robustness without modifying the victim. \hl{The best MACABEU variant reduces the efficiency of the attacks by 10--40\% relative to static defences, with improvements on every one of 12 task--victim combinations, even against an adaptive attacker.}
+\end{abstract}
+
+\section{Introduction}
+
+Text classification models based on neural networks have been increasingly popular due to high decision accuracy, but they suffer from vulnerability to \textit{adversarial examples} (AEs). This term describes pieces of data (i.e.\ text fragments) that have been purposefully modified by an attacker to elicit incorrect decisions from a victim classifier \citep{Zhang2020b}. Credibility assessment of user-generated text, e.g.\ within content filtering for a social network, is a good example where robustness to such attacks plays a key role \citep{Carter2021}.
+
+Previous research \cite{verifying_robustness} has shown that, indeed, often a small change made to the non-credible input (e.g.\ a fake-news article) can confuse a misinformation detector to rate it as credible. AEs are especially effective when the attacker is \textit{adaptive}, i.e.\ has had the opportunity to learn the victim's vulnerabilities through previous interaction \citep{przybyla-etal-2024-know}.
+
+Less attention has been given to how to design \textit{defences} against such attacks. Many classical defences against AEs involve special modifications to the victim classifier, e.g.\ adding AEs to the training data or modifying the loss function \citep{Goyal2023survey}. However, the most effective text classifiers used currently are based on large language models, often \textit{very} large and executed as a service. Their users typically do not have access to the model's weights, the computational capacity, or the expertise to perform custom training.
+
+Therefore, in this work we investigate \textit{black-box defences}: techniques that make the victim classifier more robust without any changes to the model itself. We explore simple modifications to the model's input or output that can thwart attacks. Specifically, we answer the following research questions in the context of misinformation detection:
+\begin{enumerate}
+    \item \textbf{RQ1}: Which black-box defences provide the best robustness across attacks, text domains, and victim classifiers?
+    \item \textbf{RQ2}: How do these static defences fare against an adaptive attacker --- both one pre-trained on the original victim and re-trained against a known defence?
+    \item \textbf{RQ3}: Can a defender itself be made adaptive, choosing the most effective defence per example or even continuing to learn during the attack?
+\end{enumerate}
+
+To address RQ3 we introduce \textbf{MACABEU} (\textbf{MA}king \textbf{C}redibility \textbf{A}ssessment ro\textbf{B}ust when \textbf{E}valuated \textbf{U}nder attacks), a reinforcement-learning meta-defender that selects, on a per-example basis, which static defence from a fixed pool to deploy. MACABEU operates in an \emph{offline} mode, in which the policy is frozen at deployment, and \hl{two \emph{online} modes} in which the policy continues to update from real attacker queries observed at evaluation time. The latter are, to our knowledge, the first defenders from textual AEs that adapt \emph{during} an attack.
+
+To encourage further research in this direction, we share the source code used for these experiments\footnote{\hl{Attached to the submission for review; when published available at} \url{https://github.com/[ANONYMOUS]/macabeu}}.
+
+\section{Related Work}
+\label{sec:related-work}
+\paragraph{Adversarial examples for text.}
+Since the seminal observation that small, semantics-preserving perturbations can fool neural classifiers \citep{Goodfellow2015, Szegedy2014}, a large body of work has explored AE generation for text. Attacks operate at different granularities: character-level (DeepWordBug \citep{Gao2018}, VIPER \citep{Eger2019}), word-level (TextFooler \citep{Jin2020}, BERT-Attack \citep{Li2020bert}, PWWS \citep{Ren2019}), and sentence-level paraphrasing \citep{Iyyer2018}. Search strategies range from greedy saliency-based replacement to gradient-free black-box optimisation such as genetic algorithms \citep{Alzantot2018} and particle swarm \citep{Zang2020}. Recent work has explored LLM-driven attacks that generate fluent rewrites in a single pass \citep{Moraffah2024purification, ZouUniversalLLM2023}. Toolkits such as OpenAttack \citep{Zeng2021} and TextAttack \citep{Morris2020} make these methods readily reproducible.
+
+
+\paragraph{Robustness of misinformation detectors.}
+Text credibility assessment \citep{Srba2026credibility} is an application in particular danger of AEs, e.g. an attacker who tricks a fake-news classifier can disseminate manipulated content at scale. \citet{verifying_robustness} introduced BODEGA, a benchmark covering four credibility tasks (propaganda, fact-checking, hyperpartisan news, rumour detection) and a composite metric balancing attack success with semantic and character-level similarity. Follow-up work has shown that adaptive attackers, which learn the victim's behaviour during interaction, can be substantially more effective than fixed heuristics; XARELLO \citep{przybyla-etal-2024-know} formalises this as reinforcement learning over a bandit of perturbation operators with a Transformer-based $Q$-estimator. Subsequent work has extended this picture to LLM-generated adversarial inputs against fake-news and fact-checking classifiers \citep{Bethany2025camouflage, Aldahoul2025multiagent, Przybyla2025LLMattack}, and recent surveys catalogue both the attack surface for automated fact-checking \citep{Liu2025fcsurvey} and the broader credibility-signal landscape under LLMs \citep{Srba2026credibility}, confirming that credibility classifiers remain brittle outside the original BODEGA setup.
+
+\paragraph{Threat models.}
+The two most important aspects of the threat model are the level of access to the victim model enjoyed by the attackers and defenders. In terms of \textbf{attacker's} access, the \textit{white-box} model assumes full access to the victims' weights, allowing gradient attacks such as FGSM \citep{Goodfellow2015} and PGD \citep{Madry2018}. However, it is not realistic to assume such access on the attackers' part. Previous work in misinformation domain focused on the scenario labelled \textit{black-box} (only final decisions are visible) or \textit{grey-box} (a continuous probability score is visible). Concrete examples include label-only black-box search such as PWWS \citep{Ren2019} and the genetic attack of \citet{Alzantot2018}, and score-based grey-box attacks such as DeepWordBug \citep{Gao2018}, TextFooler \citep{Jin2020} and BERT-Attack \citep{Li2020bert}. These better match the realistic deployment of credibility filters as third-party APIs. We base our work on the grey-box approach and include various modification of the output score (including black-boxing) as defence techniques. In terms of \textbf{defender's} access, we also assume the \textit{black-box} model, assuming the victim models deployment as third-party service.
+
+\paragraph{Defences against textual AEs.}
+Defensive techniques fall into three broad families \citep{Goyal2023survey, Qiu2022survey}.
+\textbf{(i) White-box training-time defences} modify the victim via adversarial training \citep{Madry2018, Miyato2017advtrain}, certified robustness \citep{Jia2019cert, Ye2020safer}, or specialised loss terms \citep{Zhu2020freelb} --- all impractical for users of large hosted models.
+\textbf{(ii) Detection-based defences} flag suspect inputs rather than correcting them \citep{Mozes2021fgws, Zhou2019disp}, at the cost of latency and false positives.
+\textbf{(iii) Black-box wrap-around defences} transform either the input or the output of the victim before it reaches downstream consumers. On the \emph{input side}, examples include spell correction \citep{Pruthi2019combating}, randomised smoothing \citep{Ye2020safer}, character-level denoising \citep{Jones2020robenc}, and embedding-space robustification against claim edits \citep{Magomere2025claimrobust}; recent work has extended this strand to LLM-based input purification \citep{Moraffah2024purification, Robey2023smoothllm} and to adversarial-aware multi-agent filtering pipelines \citep{Aldahoul2025multiagent, Tong2025groupadaptive}. On the \emph{output side}, post-processing the classifier's probability vector --- argmax discretisation (returning only the predicted label), additive output noise, stochastic decision thresholds, or random label flips --- demotes the attacker's interface from grey-box to black-box at zero training cost. Such output-randomisation tactics have been analysed both as a generic obfuscation defence and as a target for adaptive attackers \citep{Tramer2020, Athalye2018}. This family is attractive because it requires no model access and can be wrapped around any classifier; we revisit and benchmark four output-side variants in Section~\ref{sec:static-defences}. The CLEF-2024 CheckThat! lab \citep{Barron2024checkthat} likewise added an adversarial-robustness track for credibility tasks, mirroring our motivation.
+
+To our knowledge, no prior work in text classification has compared black-box defences systematically across tasks, victim architectures, and \emph{adaptive} attackers, nor combined them with a learned per-example defence selector. The closest prior benchmark \citep{Li2021defender} evaluates 11 word-substitution defences on classification and sentiment tasks, but covers only non-adaptive attackers and fixed defences. We close both gaps here, in the credibility-assessment setting.
+
+
+\section{Methods}
+
+\subsection{Attack evaluation framework}
+\label{sec:attack-framework}
+We adopt the BODEGA evaluation protocol \cite{verifying_robustness}. The benchmark covers four English-language credibility tasks --- propaganda detection (\textbf{PR2}), fact-checking (\textbf{FC}), hyperpartisan news detection (\textbf{HN}), and rumour detection (\textbf{RD}) --- each detailed in Section~\ref{sec:experiments}. Each task provides labelled training data and an evaluation set of inputs that the victim classifies correctly in the absence of attack. The attacker queries the victim $f(\cdot)$ and produces a perturbed input $x'$ from each original $x$. A trial is scored along three axes:
+\begin{itemize}
+    \item \textbf{Attack success} --- whether the victim's prediction flipped, i.e. $f(x)\neq f(x')$ (binary, averaged into the attack success rate, ASR);
+    \item \textbf{Semantic similarity} between $x$ and $x'$, measured with BLEURT \citep{Sellam2020};
+    \item \textbf{Character similarity} between $x$ and $x'$, computed as the normalised Levenshtein distance \citep{1965}.
+\end{itemize}
+The composite \textit{BODEGA score} is the product of these three components, rewarding attacks that are simultaneously effective and unobtrusive. We measure attacker effectiveness by the average BODEGA score on each task--victim--defence--attacker combination; a failed attack scores zero. For each defence we also report clean accuracy on unattacked inputs. We cap each attack at 500 victim queries\footnote{\hl{This reduces the performance of some attackers, especially on longer text. However, it would be unrealistic to assume unlimited queries to the attacked service and previous research explored even stricter limits} \citep{Przybyla2025LLMattack}}.
+
+\subsection{Static defences}
+\label{sec:static-defences}
+A static defence is a deterministic or stochastic transformation inserted in the victim's input ($t_\text{in}(\cdot)$) or output ($t_\text{out}(\cdot)$),  replacing $f(\cdot)$ with $t_\text{out}(f(t_\text{in}(\cdot)))$. We evaluate four mechanism families; Table~\ref{tab:action-gallery} (Appendix~\ref{sec:appendix-action-gallery}) shows each defence applied to the same example.
+
+\emph{Input cleaning:} \textbf{spellcheck} corrects OOV tokens against a SymSpell frequency dictionary; \textbf{unicode} applies NFKC normalisation, ASCII-maps confusable codepoints, and strips zero-width characters --- a direct counter to homoglyph attacks.
+
+\emph{Input perturbation:} \textbf{char\_noise}$_\sigma$ substitutes each character with a Unicode homoglyph with probability $\sigma$, on the assumption that an attacker's crafted edits are more fragile to extra noise than natural language is.
+
+\emph{Output masking:} \textbf{discretize} replaces the victim's probability vector with a one-hot, hiding the soft scores attackers exploit to estimate gradients (turning the attack into a black-box scenario).
+
+
+\emph{Smoothing and combinations:} \textbf{majority\_vote@$k$} draws $k$ stochastic copies of the input and aggregates the victim's verdicts on them. Each copy is produced by independently perturbing every non-whitespace character with probability $p{=}0.1$, applying one of three edits chosen uniformly at random: deletion, swap with the next character, or insertion of a random lowercase letter. Rather than collapsing the $k$ verdicts to a hard label, we return the vote-fractions as a probability vector, so the API still exposes a continuous score but one that is quantised to $1/k$ and re-sampled afresh on every query --- a noisy oracle in the spirit of randomised smoothing \citep{Ye2020safer}. \textbf{spellcheck\_mv@$k$} composes spellcheck with this majority vote. We test $k \in \{3, 7\}$.
+
+For each defence we report both clean accuracy (Table~\ref{tab:clean-accuracy}) and robustness against the four standard attackers (Table~\ref{tab:results-main}), making the trade-off explicit.
+
+
+\input{figs/tab_results_main.tex}
+
+\subsection{Adaptive defences (MACABEU)}
+\label{sec:macabeu}
+Static defences are brittle once the attacker can adapt to a known transformation: \citet{Athalye2018} and \citet{Tramer2020} reduce, respectively, 7/9 and 13/13 published defences to baseline robustness with defence-specific attacks, and our RQ2 experiment (Section~\ref{sec:results-rq2}) reproduces this for text. Yet the defender does not, in practice, know which attack a given example uses. We therefore introduce MACABEU, a defender that selects which static defence to apply per example using reinforcement learning \citep{SuttonBarto2018} --- \hl{specifically a contextual bandit} \citep{LiContextualBandit2010} \hl{acting on input features, similar to XARELLO's attacker-side construction} \citep{przybyla-etal-2024-know}. Figure~\ref{fig:macabeu-arch} sketches the resulting loop.
+
+\begin{figure}[t]
+  \centering
+  \resizebox{\linewidth}{!}{\input{figs/macabeu_architecture.tex}}
+  \caption{MACABEU as a defender-side RL loop.}
+  \label{fig:macabeu-arch}
+\end{figure}
+
+
+\paragraph{Formulation.}
+We frame defence selection as a contextual bandit \citep{LiContextualBandit2010, Langford2008}: each evaluation example is a single-step episode in which the agent observes a feature vector $\phi(x)$ of the input $x$, picks one defence $a\in\mathcal{A}$ to apply to it, and receives a scalar reward determined by whether the victim's prediction on the defended text matches the gold label.
+
+The state $\phi(x)$ is a 10-dimensional vector of surface statistics: length, word count, average word length, OOV ratio, non-ASCII ratio, uppercase ratio, digit ratio, punctuation density, repeated-character ratio, and character entropy. Each is a known signature of a different attack family, so $\phi(x)$ carries enough signal for the policy to infer the attack and the defence likely to undo it.
+
+The action space $\mathcal{A}$ contains eight defences from Section~\ref{sec:static-defences}, in the four mechanism families: \texttt{none} (pass-through), \texttt{spellcheck}, \texttt{unicode}, \texttt{majority\_vote@3}, \texttt{majority\_vote@7}, \texttt{spellcheck\_mv@3}, \texttt{discretize}, and \texttt{char\_noise@0.10}; Table~\ref{tab:action-gallery} (appendix \ref{sec:appendix-action-gallery}) shows each applied to the same example.
+
+
+The reward is $r(a) = +1$ if the victim's prediction on the defended input matches the gold label and $-1$ otherwise, minus a small inference-cost penalty $c(a)$ that discourages over-using the most expensive defences ($c=0.10$ for $k{=}7$ smoothing, $0.05$ for $k{=}3$, $0.02$ for \texttt{char\_noise}, $0$ otherwise). The action-value network is a 3-layer MLP ($64$/$32$ hidden, ${\sim}3$k parameters) trained with $\varepsilon$-greedy exploration and Adam \citep{Kingma2015}.
+
+
+\paragraph{}
+We consider three operating regimes:
+\paragraph{Offline (MACABEU-off).} The policy is trained on synthetic attacker--defender interactions over the training portion in BODEGA: for each training example we simulate a randomly chosen attacker, observe the outcome under each candidate defence, and update the action-value network. At deployment (attack portion) the policy is frozen.
+\paragraph{Online.} The offline policy is used as a warm start, and the agent continues to update its network from real attacker queries observed at evaluation time, using a replay buffer of size 16 with a 50-example warm-up. The defender thus adapts to the specific attacker it is facing, mirroring the asymmetry assumed by adaptive attackers. \hl{This process requires access to true labels in order to signal the effectiveness of the defence. We consider two variants: assuming true labels are available during adaptation, e.g. from humans in the loop (\textbf{MACABEU-oracle}), or estimated by checking the victim's response to \texttt{majority\_vote@7} (\textbf{MACABEU-estimated})}. \hl{A direct comparison of the two variants on the subset of task--victim cells where the estimated variant finished within the revision budget is presented in Appendix~\ref{sec:appendix-macabeu-variants}; unless stated otherwise, MACABEU-on in the main text refers to the oracle variant to ensure comparability across the full 3-victim grid.}
+% Note that MACABEU training requires access to true labels in order to signal the effectiveness of the defence. While we can assume they are always available for MACABEU-Off (trained on set-aside data), it is not necessarily so for MACABEU-On, retrained on incoming data. We can therefore treat the latter as theoretical best-case, e.g. when some human assistance is available in the semi-automatic content filtering workflow. CHANGE WHEN FINAL VERSION IS AVAILABLE
+
+%\subsection{Evaluation}
+%\label{sec:evaluation}
+%We measure attacker effectiveness by the composite BODEGA score on each task--victim--defence--attacker combination; a failed attack scores zero (Section~\ref{sec:attack-framework}). For each defence we also report clean accuracy on unattacked inputs.
+
+\section{Experiments}
+\label{sec:experiments}
+\paragraph{Tasks and data.}
+We use the four tasks of text credibility assessment in English bundled with BODEGA \citep{verifying_robustness}: propaganda detection (\textbf{PR2}; based on SemEval-2020 Task 11 \citep{DaSanMartino2020semeval}), fact checking (\textbf{FC}; FEVER \citep{Thorne2018fever}), hyperpartisan news detection (\textbf{HN}; PAN at SemEval-2019 \citep{Kiesel2019hyperpartisan}), and rumour detection (\textbf{RD}; augmented RNR \citep{Zubiaga2016rumours}). Their training sizes differ greatly ($\sim$8.7k for RD up to $\sim$173k for FC; full per-split counts in Table~\ref{tab:tasks-stats}, appendix \ref{sec:appendix-task-stats}).
+
+\paragraph{Victim classifiers.}
+To probe whether defences transfer across architectures, we train three victims per task: a \textbf{BiLSTM} over 300-dimensional GloVe embeddings, a fine-tuned \textbf{BERT-base}, and a QLoRA-fine-tuned \textbf{Gemma-2B}. They differ in parameter count and cover the dominant paradigms in current text classification systems.
+
+\paragraph{Attackers.}
+We re-use the four standard black-box attackers and the adaptive attacker XARELLO introduced in Section~\ref{sec:related-work}; BERT-Attack, PWWS, DeepWordBug, Genetic, XARELLO, each capped at 500 victim queries per example.
+
+\paragraph{Protocols.}
+We conduct three experimental blocks. \textbf{RQ1:} the twelve static defences against the four standard attackers on every task--victim combination (Gemma restricted to the eight strongest defences identified on BiLSTM and BERT to limit computational resources), with clean-accuracy cost. \textbf{RQ2:} XARELLO against the strongest static defences on every combination, isolating attacker adaptivity. \textbf{RQ3:} \hl{MACABEU variants against all five attackers on every combination --- $3 \times 5 \times 4 \times 3 = 180$ combinations} --- isolating defender adaptivity (vs.\ RQ2) and the gain of an adaptive defender over the best static defence (vs.\ RQ1).
+
+
+\paragraph{Implementation.}
+Hardware, hyperparameters, and library versions are reported in Appendix~\ref{sec:appendix-impl}.
+
+
+
+\input{figs/tab_clean_accuracy.tex}
+
+\section{Results}
+%We report results in three parts, one per research question. 
+ 
+\subsection{RQ1: Static defences}
+\label{sec:results-rq1}
+
+\paragraph{Aggregated robustness.}
+Table~\ref{tab:results-main} reports the mean BODEGA score for each $\langle$defence, attacker$\rangle$ pair, aggregated over all 12 task--victim sub-combinations (4 tasks $\times$ 3 victims). Focusing on the four standard attacker columns (BERT-Attack, PWWS, DeepWordBug, Genetic), three clear patterns emerge.
+
+\textbf{(i) Spellcheck foils character-level attacks but misses word-level ones.} Against DeepWordBug, \texttt{spellcheck} drops mean BODEGA from $0.259$ (undefended) to $0.087$ --- a $66\%$ reduction. Against the three word-level attackers (BERT-Attack, PWWS, Genetic) it is essentially inconsequential (mean BODEGA $0.448$/$0.366$/$0.344$ vs.\ $0.445$/$0.357$/$0.376$ undefended). The pattern is uniform across all victims.
+
+\textbf{(ii) Output masking uniformly weakens all four attackers.} Hiding the victim's soft probabilities (\texttt{discretize}) cuts mean BODEGA from $0.359$ to $0.241$ --- a $33\%$ reduction --- and the per-attacker drop is similar in every column (BERT-Attack $-34\%$, PWWS $-27\%$, DeepWordBug $-31\%$, Genetic $-39\%$), with no input transformation applied.
+
+\textbf{(iii) Ensembling dominates among single-action defences.} Majority-voting and its spell-corrected variant (\texttt{MV@3}, \texttt{MV@7}, \texttt{sc\_mv@3}) all bring mean BODEGA below $0.14$ across the four standard attackers, with \texttt{sc\_mv@3} the strongest at $0.123$ mean. \texttt{char\_noise@0.10} achieves comparable robustness ($0.138$) at a higher clean-accuracy cost (Table~\ref{tab:clean-accuracy}).
+
+
+\paragraph{Clean-accuracy cost.}
+Table~\ref{tab:clean-accuracy} reports clean accuracy on unattacked inputs, averaged across the three victims, with each non-baseline cell annotated by its percentage change relative to the undefended baseline. Input-perturbing defences pay the largest tax: \texttt{char\_noise@0.10} loses $8.3\%$ relative to baseline ($0.715$ vs.\ $0.780$), and the majority-voting variants lose $7$--$9\%$. \texttt{spellcheck} ($+0.8\%$) and \texttt{unicode} ($-0.1\%$) are accuracy-preserving, and \texttt{discretize} is identical to the baseline by construction (it touches only the output). The offline MACABEU policy, free to pick \texttt{none} on benign inputs, attains the highest mean clean accuracy ($0.790$, $+1.3\%$). Figure~\ref{fig:pareto} plots all nine policies on the accuracy--robustness plane: MACABEU-off sits at the top-right corner --- it yields the highest clean accuracy and cuts mean BODEGA by $55\%$ relative to \texttt{none} ($0.162$ vs.\ $0.359$). The reason is structural: when no attack is present, the policy falls back to the accuracy-preserving defences in its action library; under attack, it switches to the more aggressive transforms that trade some accuracy for robustness. We unpack this behaviour in Section~\ref{sec:results-rq3}.
+
+
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figs/fig_pareto.pdf}
+  \setlength{\abovecaptionskip}{4pt}
+  \caption{Accuracy--robustness trade-off. $x$: mean clean accuracy; $y$: mean BODEGA over the four standard attackers. Top-right is best.}
+  \label{fig:pareto}
+\end{figure}
+
+
+\paragraph{Best static defences going forward.}
+We select the strongest static defences from the aggregated grid for RQ2/RQ3. Among them, \texttt{spellcheck\_mv@3} is the single strongest defence on mean BODEGA and the natural target for an adaptive attacker.
+
+\subsection{RQ2: Adaptive attacks}
+\label{sec:results-rq2}
+
+\paragraph{Pretrained XARELLO vs.\ static defences.}
+The rightmost column of Table~\ref{tab:results-main} reports XARELLO's mean BODEGA under three defences for which we have run the adaptive attacker on all 12 task--victim combinations. Against the undefended victim XARELLO scores $0.585$, well above any standard attacker, confirming the gap between adaptive and non-adaptive search. Wrapping the same victim in \texttt{spellcheck\_mv@3} --- the strongest static defence on the standard-attacker grid --- only reduces XARELLO's mean BODEGA to $0.374$. By contrast, the standard attackers all collapse to $\leq 0.16$ under the same defence: a $\sim 60\%$ gap between adaptive and non-adaptive damage at equal defence.
+
+\paragraph{Retraining against a stochastic defence weakens the adaptive attacker.}
+A defence in the adaptive threat model should be tested against an attacker retrained with the defence in place. Table~\ref{tab:xarello-adapt} reports this: a second adaptive agent, retrained from scratch against \texttt{spellcheck\_mv@3}, is evaluated alongside the pretrained one on both undefended and defended deployments. On the defended deployment the retrained agent is worse than the pretrained one in 6 of 8 task--victim combinations (mean BODEGA $0.256$ vs.\ $0.305$); only PR2-BERT and, marginally, HN-BERT improve --- both combinations where the pretrained attacker was already crushed by the defence ($<\!0.2$ BODEGA), leaving so little signal that any retraining drift registers as gain. We attribute the overall collapse to the defence's stochasticity: three random perturbations re-encode every query, so the attacker's $Q$-network ends up fitting to noise rather than a stable victim. 
+
+
+\input{figs/tab_xarello_adapt.tex}
+
+\subsection{RQ3: Adaptive defences}
+\label{sec:results-rq3}
+
+\paragraph{MACABEU vs.\ adaptive attacker.}
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.8\textwidth]{figs/fig_heatmap_def_combined.pdf}
+  \setlength{\abovecaptionskip}{4pt}
+  \caption{Online MACABEU's mean action-selection frequency (\%). \emph{Left:} action $\times$ attacker. \emph{Right:} action $\times$ task.}
+  \label{fig:heatmaps-combined}
+\end{figure*}
+The XARELLO column of Table~\ref{tab:results-main} reports mean BODEGA for an undefended victim ($0.585$), MACABEU-Off ($0.542$), and MACABEU-On ($0.356$). The offline policy barely improves on the baseline ($-0.043$) and is in fact weaker than \texttt{spellcheck\_mv@3} ($0.374$); the online policy cuts BODEGA by $0.229$ ($39\%$ relative), below any static defence. The offline--online contrast is the central RQ3 result: adaptivity, not policy capacity, closes the gap. Per-combination, online MACABEU wins in 12/12 (Figure~\ref{fig:headline}), $16$--$56\%$ below the offline policy.
+
+\paragraph{MACABEU vs.\ standard attackers.}
+The first four columns of Table~\ref{tab:results-main} show that the gains of online variant are not limited to the adaptive attacker. Online MACABEU also produces the lowest mean BODEGA against the static attackers. The offline policy is again weaker than the strongest static defence (\texttt{sc\_mv@3}) on every standard-attacker column, confirming that the win comes from updating during the attack rather than from the action library itself --- the two policies share the same set of eight actions.
+
+\paragraph{What does the online policy learn?}
+Figure~\ref{fig:heatmaps-combined} shows online MACABEU-oracle's post-warmup action distribution by attacker (left) and by task (right). With no attacker, \texttt{spellcheck} accounts for $47\%$ of selections and \texttt{char\_noise@0.1} for only $6\%$; under attack these flip. Within the attacker columns three patterns stand out. \emph{(i)} \texttt{char\_noise@0.1} dominates against all four standard attackers ($20$--$34\%$): each commits to a fixed search procedure, and a randomised input transform invalidates the importance scores it caches across queries. \emph{(ii)} Against DeepWordBug --- the only character-level attacker --- \texttt{spellcheck} ($20\%$) and \texttt{unicode} ($18\%$) rise close to \texttt{char\_noise@0.1}, since they specifically reverse typos and homoglyph-like edits. \emph{(iii)} Under XARELLO the policy shifts away from randomised defences: \texttt{spellcheck} becomes the most-selected action ($22\%$) and \texttt{char\_noise@0.1} drops to $16\%$. XARELLO's $Q$-network averages many queries per example, so a stochastic transform feeds it noise but a deterministic cleaner cannot be averaged out. The task panel mirrors this: \textbf{PR2/FC} concentrate on \texttt{char\_noise@0.1} ($27$--$31\%$); \textbf{HN} concentrates on \texttt{spellcheck} ($28\%$) with \texttt{char\_noise@0.1} dropping to $7\%$ --- hyperpartisan labels hinge on charged vocabulary that random noise corrupts; \textbf{RD} is bimodal (\texttt{spellcheck} $22\%$, \texttt{char\_noise@0.1} $20\%$), short tweets giving both transforms high per-edit leverage. The pattern is not explained by clean-accuracy cost: \texttt{char\_noise@0.1} costs PR2 $-2.5\%$ vs.\ FC $-14.9\%$, yet both rely on it heavily.
+
+Tables~\ref{tab:qualitative-bilstm}--\ref{tab:qualitative-gemma} (appendix \ref{sec:appendix-extra-figs}) make this concrete: online MACABEU forces XARELLO from a few high-leverage word substitutions into many low-impact character-level edits, degrading both semantic and character similarity on every combination.
+
+\hl{Additionally, we perform a feature importance analysis, indicating that MACABEU mostly relies on text length (in characters and words), as well as the ratio of uppercase and out-of-vocabulary words to choose the right defence. The details are in appendix} \ref{sec:featureimportance}. 
+
+\section{Discussion}
+
+A single static defence creates a stationary problem that an adaptive attacker eventually solves. Allowing the defender to be adaptive as well restores the symmetry: every attacker action becomes a learning signal for the defender. Online MACABEU exploits exactly this --- the win is not a stronger defence library (it shares its eight actions with the offline policy) but a better policy over the same library, learned against the deployed attacker. The qualitative ranking of static defences is preserved across BiLSTM, BERT, and Gemma (ensembles dominate; character-level cleaning helps only against character-level attacks; output masking buys a constant fraction), and the online MACABEU win is victim-uniform (BERT $-41\%$, Gemma $-33\%$; the latter reflects Gemma being intrinsically harder to attack).
+
+Black-box preprocessing nonetheless has a hard floor: even under online MACABEU, XARELLO retains a residual attack success rate (ASR) of 15--76\% across all combinations. When the attacker produces semantically faithful, character-clean perturbations that genuinely flip the victim's decision boundary, no input-side transformation can recover the original prediction. Closing the gap requires complementary defences --- input authenticity, provenance, or victim-side modification --- which fall outside our threat model. Cost-wise, the strongest static defences (\texttt{sc\_mv@7}, \texttt{char\_noise@0.1}) are also the most expensive; online MACABEU's per-query overhead (one Adam step on a 3k-parameter network) is negligible relative to the victim forward pass it wraps.
+
+\section{Conclusion}
+We presented the first systematic comparison of black-box preprocessing defences for misinformation detection across four tasks, three victim architectures, and five attackers, and introduced MACABEU, an RL-based meta-defender that selects defences per example and keeps learning during the attack. Across the resulting 12 task--victim combinations, online MACABEU reduces an adaptive attacker's BODEGA score by $16$--$56\%$ relative to its offline counterpart, without modifying the victim. We release all code and policies in the hope that adaptive defence --- cheap to retrofit onto already-deployed classifiers --- becomes a routine companion to the systems it protects.
+
+% Acknowledgments removed in [review] mode for double-blind submission;
+% restore for [final] camera-ready.
+%
+% \section*{Acknowledgments}
+% This work was supported by the \textit{Ramón y Cajal} grant RYC2024-050327-I, funded by the Spanish State Research Agency (MICIU/AEI/10.13039/501100011033) and by the European Social Fund Plus (ESF+) of the European Union.
+
+\section*{Limitations}
+
+\paragraph{(i) Language coverage.} All experiments are restricted to English-language credibility datasets, and the SymSpell dictionary, BLEURT model, and pretrained victims are likewise English-specific. The MACABEU architecture itself is language-agnostic --- the action library only requires per-language analogues of the underlying transforms --- so extending the study to multilingual misinformation corpora would be feasible.
+
+\paragraph{(ii) Hand-curated action space.} MACABEU's eight actions are static, character- or token-level preprocessing primitives. Two natural directions for richer libraries are paraphrase- and purification-based defences, where an LLM rewrites the input \citep{Moraffah2024purification, Robey2023smoothllm}, and learned token-substitution defences such as robust encodings \citep{Jones2020robenc} or adversarial typo correction \citep{Pruthi2019combating}. Because MACABEU's selection is decoupled from the action implementations, such defences can be added as additional arms without retraining the meta-controller.
+
+\paragraph{(iii) Single-attacker assumption.} Online MACABEU is trained against a single attacker per session and assumes the attacker's strategy is approximately stationary across queries. An adversary that switches attack styles mid-session, or that coordinates several attackers against the same defender, would induce a non-stationary environment for the online learner. Mitigations that maintain ensembles of frozen policies and switch between them at detected change points, or that lower the effective learning rate when reward variance spikes, are directly compatible with our architecture and a natural follow-up.
+
+\paragraph{(iv) Compute scope.} To keep total GPU usage tractable on a single-GPU SLURM cluster, we deliberately restricted two of the heaviest sub-grids. Gemma was evaluated only against the top eight static defences identified in Section~\ref{sec:results-rq1}, since each Gemma attack run is roughly an order of magnitude more expensive than its BERT or BiLSTM counterpart; the standard-attacker grid for the seven discarded defences is dominated by ensemble defences that are already weaker than \texttt{sc\_mv@3}, so the omission does not affect the qualitative ranking. Retrained-XARELLO results are similarly restricted to BiLSTM (Table~\ref{tab:xarello-adapt}), where each retraining run is cheapest; the pretrained-XARELLO grid against MACABEU is nonetheless complete across all 12 task--victim combinations and is the threat model we recommend defenders evaluate against.
+
+\paragraph{(v) Semantic-similarity proxy.} BODEGA uses BLEURT \citep{Sellam2020} as its single semantic-similarity component. Alternative proxies (BERTScore, COMET, human ratings) could shift the absolute BODEGA scale; we expect the qualitative comparisons between defences to remain stable, but a robustness study across metric choices would strengthen the claim.
+
+\paragraph{(vi) Black-box scope.} Our threat model excludes any modification to the victim model, which is the right setting for retrofitting defences onto already-deployed classifiers but leaves complementary lines of work --- adversarial training of the victim \citep{Madry2018, Miyato2017advtrain}, input authenticity checks, and provenance signals --- outside the scope of this study.
+
+\paragraph{(vii) Query budget.} Each attacker is allowed up to 500 queries per example, which is higher than what a deployed misinformation classifier would typically expose: real platforms aggressively rate-limit queries and observe only a small fraction of them. Approaches that explicitly bound the attacker's query budget, such as TREPAT \citep{Przybyla2025LLMattack}, are a natural complement to adaptive preprocessing and would tighten the threat model used here.
+
+\paragraph{(viii) Victim scale.} Our victims --- a BiLSTM trained from scratch, BERT-base fine-tuned in full, and Gemma-2B with QLoRA --- are small by 2026 production standards. Real deployments increasingly rely on multi-billion-parameter LLMs, whose decision surfaces, vulnerability profile, and clean-accuracy budget under a given preprocessing defence may differ from what we observe at this scale. A follow-up evaluating MACABEU against larger victim backbones (Gemma-7B/27B, Llama-3 8B/70B) would be necessary to extrapolate our quantitative claims.
+
+\paragraph{(ix) Fine-tuning vs.\ prompting.} All three victims are fine-tuned task-specific classifiers. Prompting-based misinformation detection --- where the same backbone is instructed in-context rather than fine-tuned on the BODEGA training split --- is increasingly common in practice and exhibits a different robustness profile (in particular, prompt injection becomes a parallel attack surface). MACABEU is in principle backbone-agnostic, but its action library, learning rate, and warm-up budget were tuned for fine-tuned victims and would have to be re-validated under prompting.
+
+\section*{Ethical Considerations}
+
+\paragraph{Dual-use risk.} The defences we study are explicitly designed to harden misinformation classifiers deployed against adversarial users. The same action library --- spell-correction, Unicode normalisation, majority-vote averaging, character noise, output discretisation --- is, however, equally inspectable by an attacker who wishes to design perturbations that survive a given defence. We argue that the asymmetry favours defenders in this setting: the offline MACABEU policy and all static defences are already accessible to a black-box attacker through query observation (Section~\ref{sec:results-rq2}), so disclosure does not materially expand the attacker's surface; conversely, the online MACABEU regime --- which is the central contribution --- is, by construction, only usable by an operator with control of the inference pipeline and therefore strengthens defenders disproportionately.
+
+%\paragraph{Datasets and PII.} All four BODEGA tasks (PR2, FC, HN, RD) are publicly released research corpora derived from previously published news, fact-checking, and rumour-detection collections. We use them in their released form and introduce no new annotations of individuals or private content; no personally identifying information was scraped, augmented, or redistributed as part of this work.
+
+\paragraph{Misuse of misinformation detectors.} Robust credibility classifiers can in principle also be used to over-filter legitimate dissenting speech. Our experiments measure robustness to adversarial perturbation, not the calibration of any particular deployment decision; the defences studied here neither shift the original classifier's decision threshold (with the exception of \texttt{discretize}, whose effect is bounded and reported) nor change the set of inputs that the underlying victim labels as non-credible. Decisions about how to act on a classifier's output remain the responsibility of the operator.
+
+\paragraph{Reproducibility and AI assistance.} We release all code, MACABEU policies, and configuration under a permissive licence, alongside the SLURM harnesses needed to reproduce the experiments on a single-GPU node. As disclosed in Appendix~\ref{sec:appendix-impl}, the implementation was developed with the help of LLM-based coding assistants; all generated code was reviewed, tested, and validated by the authors.
+
+
+\bibliography{PP_biblio,MFF_biblio}
+
+\appendix
+\section{Task statistics}
+\label{sec:appendix-task-stats}
+
+Table~\ref{tab:tasks-stats} reports per-task data statistics for the four BODEGA credibility tasks: PR2 (SemEval-2020 Task 11), FC (FEVER), HN (PAN @ SemEval-2019), and RD (augmented RNR). Sizes are total examples per split, computed as exact line counts from the released TSVs (no header rows). The \emph{\% pos.} column is the share of the positive (non-credible) class on the \emph{attack} split, which is the subset actually evaluated: FC and HN are balanced by construction on that split, whereas PR2 and RD remain skewed towards the credible class. \emph{Mean / med.\ words} are whitespace-tokenised counts, also on the attack split. The four tasks span more than an order of magnitude in both size and average input length --- from PR2 sentences ($\sim 21$ words) to HN articles ($\sim 605$ words) --- giving the defence evaluation a deliberately heterogeneous footprint.
+
+\begin{table}[h]
+  \centering
+  \input{figs/task_stats.tex}
+  \caption{Per-task data statistics for the four BODEGA credibility tasks.}
+  \label{tab:tasks-stats}
+\end{table}
+
+\section{Defence action gallery.}
+\label{sec:appendix-action-gallery}
+Table~\ref{tab:action-gallery} shows the eight MACABEU actions applied to a single \textsc{PR2} example, illustrating exactly what each defence does to the text seen by the victim classifier. Input transformations (\texttt{spellcheck}, \texttt{unicode}, \texttt{majority\_vote}, \texttt{spellcheck\_mv}, \texttt{char\_noise}) are shown with the modified spans in \textbf{bold}; \texttt{discretize} acts only on the classifier's output distribution, so the input is left unchanged.
+
+\input{figs/tab_action_gallery}
+
+\section{Implementation details}
+\label{sec:appendix-impl}
+
+\paragraph{Hardware and tooling.} All experiments are run on a single-GPU SLURM cluster (NVIDIA A40/L40s, 48\,GB). Victims and attackers follow the BODEGA reference implementation \citep{verifying_robustness}: BiLSTM victims are trained from scratch on the BODEGA training splits over 300-dimensional GloVe embeddings \citep{Pennington2014}; BERT-base \citep{Devlin2019} is fine-tuned for 3 epochs; Gemma-2B \citep{Gemma2024} is fine-tuned with QLoRA \citep{Dettmers2023} (rank 16, $\alpha=32$, 4-bit NF4 quantisation). All attackers are wrapped through OpenAttack \citep{Zeng2021} with a 500-query budget per example. Semantic similarity uses BLEURT-20 \citep{Sellam2020, Pu2021}; character similarity uses normalised Levenshtein distance \citep{1965} via the \texttt{editdistance} library; spellchecking uses SymSpell with the standard 80k-word English frequency dictionary; Unicode confusable mappings come from the \texttt{homoglyphs} library and the official Unicode confusables table. Code, configurations, and trained MACABEU policies are released alongside the paper.
+
+\paragraph{Compute budget.} Experiments are carried out on a shared SLURM cluster, with each job allocated a single NVIDIA A40 or L40s GPU (48\,GB). The full evaluation comprises 4 tasks $\times$ 3 victim classifiers $\times$ 12 defences $\times$ 5 attackers, plus MACABEU offline training (one run per task--victim combination) and online policy evaluation against XARELLO. Victim fine-tuning (BERT, Gemma) and BLEURT-based BODEGA scoring dominate the per-job cost; per-action MACABEU updates contribute a negligible fraction. Across all completed runs reported here and in development, the project consumed approximately \textbf{3{,}400 GPU-hours} (1{,}776 GPU jobs).
+
+\paragraph{Software versions.} The experiments use Python 3.10.20 with PyTorch 2.7.1 (CUDA 11.8, cuDNN 9.1), Hugging Face \texttt{transformers} 4.46.3, \texttt{tokenizers} 0.20.3, and \texttt{datasets} 4.7.0. Adversarial attacks run through OpenAttack 2.1.1; semantic similarity uses \texttt{bleurt-pytorch} 0.0.1 (BLEURT-20 checkpoint) and \texttt{bert-score} 0.3.13; character similarity uses \texttt{editdistance} 0.8.1; and the static-defence library uses \texttt{symspellpy} 6.9.0 (English 80k-word frequency dictionary) and \texttt{homoglyphs} 2.0.4. Gemma fine-tuning relies on \texttt{peft} 0.18.1, \texttt{bitsandbytes} 0.49.2, and \texttt{accelerate} 1.13.0; numerical code uses NumPy 1.26.4.
+
+\paragraph{Reporting and variability.} All reported BODEGA scores correspond to single attacker runs with fixed random seeds across defence, attacker, task, and victim seeds; we do not average over multiple repetitions per (defence, attacker, task, victim) cell, given the size of the evaluation matrix. The MACABEU \emph{online} numbers carry inherent run-to-run variance from the per-query replay buffer and $\varepsilon$-greedy exploration; the consistency of the 12/12 win pattern in Figure~\ref{fig:headline} suggests this variance is small relative to the offline--online gap, but a multi-seed study would be needed to quantify it.
+
+
+\paragraph{MACABEU state features.} The state vector encodes ten features of the current input:
+\begin{enumerate}
+    \item Length, in characters.
+    \item Word count (whitespace-tokenised).
+    \item Average word length.
+    \item Out-of-vocabulary ratio: fraction of whitespace tokens not found in the SymSpell English frequency dictionary.
+    \item Non-ASCII character ratio.
+    \item Uppercase character ratio.
+    \item Digit ratio.
+    \item Punctuation density.
+    \item Repeated-character ratio: fraction of length-3 substrings consisting of three identical characters, normalised by input length.
+    \item Shannon entropy of the character distribution.
+\end{enumerate}
+
+
+%\paragraph{MACABEU reward shaping.} $r = +1$ on correct prediction, $-1$ otherwise, minus a per-action cost: \texttt{none}/\texttt{spellcheck}/\texttt{unicode}/\texttt{discretize} = 0; \texttt{majority\_vote@3}/\texttt{spellcheck\_mv@3} = 0.05; \texttt{majority\_vote@7} = 0.10; \texttt{char\_noise@0.10} = 0.02.
+
+\paragraph{MACABEU hyperparameters.} Offline: replay buffer 50k, batch 64, $\eta=10^{-3}$ (Adam), target update every 200 steps, $\gamma=0$, 200 training episodes per task--victim. Online: warm-up 50 examples at $\varepsilon=0.5$, replay buffer 16, batch 16, one update per query post-warmup. Initial $\varepsilon$ in offline mode anneals from 1.0 to 0.05 over training.
+
+
+\paragraph{Use of AI coding assistants.} The implementation --- training and evaluation scripts, data-conversion utilities, SLURM job harnesses, and plotting/table-generation tooling --- was developed with the help of LLM-based coding assistants (Claude Code with Opus 4.6 and 4.7). All generated code was reviewed, tested, and integrated by the authors; experimental design, hyperparameter choices, analyses, and the paper text remain our own.
+
+
+\section{Qualitative examples}
+\label{sec:appendix-extra-figs}
+
+Tables~\ref{tab:qualitative-bilstm}, \ref{tab:qualitative-bert}, and \ref{tab:qualitative-gemma} present one per-task qualitative trace for each of the three victim architectures (BiLSTM, BERT, Gemma). Each row contrasts the adversarial example XARELLO produces against a weaker baseline (the undefended victim for BiLSTM; the offline MACABEU policy for BERT/Gemma) with the example it produces against online MACABEU. Two patterns emerge consistently. \emph{(i)} Against the weaker baseline, XARELLO commits to a small number of high-leverage word-level substitutions (e.g.\ ``president'' $\to$ ``held'' in PR2, ``cornered'' $\to$ ``kidnap'' in RD). \emph{(ii)} Against online MACABEU, the same edit budget fragments into many shorter, lower-impact character-level perturbations spread across the input. Together --- more edits, smaller per-edit impact --- both semantic and character similarity drop, lowering BODEGA on every task--victim combination.
+
+
+\input{figs/tab_qualitative_bilstm.tex}
+
+\input{figs/tab_qualitative_bert.tex}
+
+\input{figs/tab_qualitative_gemma.tex}
+
+\section{MACABEU variants comparison}
+\label{sec:appendix-macabeu-variants}
+
+Section~\ref{sec:macabeu} introduces two online MACABEU variants: MACABEU-oracle, which uses the gold label to compute the RL reward, and MACABEU-estimated, which replaces it with a pseudo-label obtained by running \texttt{majority\_vote@7} on the defended input and taking the majority class. Table~\ref{tab:macabeu-variants} compares the two variants against each attacker on the BiLSTM and BERT victims. We exclude the Gemma victim because the estimated variant did not finish on the Gemma sub-grid within the revision cycle --- each of the three RD--Gemma cells is projected at $\sim$140 wallclock hours due to the additional 7 base-victim forward passes required per online reward step on long inputs.
+
+\input{figs/tab_macabeu_variants.tex}
+
+Two observations emerge. First, MACABEU-estimated preserves most of the offline-to-online gain: mean BODEGA drops from 0.244 (MACABEU-off) to 0.182 (MACABEU-estimated), leaving MACABEU-estimated stronger than every static defence reported in Table~\ref{tab:results-main} on the same sub-grid. Second, the residual gap to MACABEU-oracle is $+20\%$ relative BODEGA on average, and is not uniform across attackers: on character-level attackers (BERTattack, XARELLO) the estimated variant tracks the oracle within $5\%$, while on word-level attackers (PWWS, Genetic) the pseudo-label carries a weaker signal ($+60\%$ and $+27\%$ respectively). This is expected: MV7's stochastic character-level perturbations are effective at eliciting label flips on character-level attacks, so its majority vote is a reliable proxy for the gold label; against word-level substitutions the perturbed copies tend to agree with the (fooled) prediction, and the pseudo-label reward reinforces the wrong action.
+
+\section{Feature importance analysis}
+\label{sec:featureimportance}
+
+Section~\ref{sec:macabeu} defines the 10-dimensional state vector $\phi(x)$ that MACABEU consumes to select a defence. We analyse the contribution of each feature via mean-imputation feature importance: for every trained MACABEU policy and every example, we compute the greedy action $a_{\mathrm{orig}} = \arg\max_a Q(\phi(x), a)$; then for each feature dimension $d$ we replace $\phi_d(x)$ with the per-task dataset mean $\bar\phi_d$ and recompute $a_d^{\mathrm{ablated}}$. A feature is important if replacing it flips the action often. We report the \emph{flip rate}, the fraction of examples where $a_{\mathrm{orig}} \neq a_d^{\mathrm{ablated}}$, per feature.
+
+We run this analysis on all trained MACABEU policies on disk --- the offline policy (one per task--victim combination), and the online oracle and online estimated policies (one per task--victim--attacker combination) --- yielding 880 (policy, feature) flip-rate measurements.
+
+Figure~\ref{fig:featimp-agg} aggregates the flip rate over all policies within each of the three MACABEU variants. Four features dominate: \emph{text length} (0.18--0.26 flip rate), \emph{uppercase ratio} (0.13--0.26), \emph{word count} (0.13--0.22), and \emph{OOV ratio} (0.14--0.23); the remaining six features have flip rates below $0.11$ and thus contribute little to the policy's decisions. Two secondary observations. First, the offline policy exhibits systematically higher flip rates than either online variant --- almost double for the four dominant features --- indicating that the frozen policy relies on individual features more sharply, and that online adaptation smooths the decision surface into a more distributed representation. Second, MACABEU-oracle and MACABEU-estimated agree closely on the per-feature flip rates (mean absolute difference below $0.02$ per feature), which supports the interpretation that the MV7 pseudo-label converges to essentially the same feature-usage strategy as the gold label, differing only in the amount of reward signal.
+
+Figure~\ref{fig:featimp-atk} breaks the same analysis down by attacker for the two online variants. The overall picture --- text length, word count, uppercase ratio, and OOV ratio dominating --- is preserved across attackers, with predictable per-attacker shifts: DeepWordBug (character-level) pushes \emph{text length} particularly high on long-text tasks (Rumour Detection, Hyperpartisan News), while against XARELLO the policy relies more evenly on all four dominant features, consistent with XARELLO producing more diffuse edits than the standard character-level attacker.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.9\linewidth]{figs/fig_feature_importance.pdf}
+  \caption{Mean flip rate per feature (rows), aggregated over all trained policies within each MACABEU variant (columns). Darker cells indicate features the policy relies on more heavily.}
+  \label{fig:featimp-agg}
+\end{figure}
+
+\begin{figure*}[h]
+  \centering
+  \includegraphics[width=0.9\linewidth]{figs/fig_feature_importance_by_atk.pdf}
+  \caption{Per-attacker breakdown of feature flip rates. \emph{Left:} MACABEU-off (a single column, since the offline policy is attacker-independent). \emph{Middle:} MACABEU-oracle, one column per attacker. \emph{Right:} MACABEU-estimated. Flip rates are averaged over the 4 tasks and 3 victim classifiers.}
+  \label{fig:featimp-atk}
+\end{figure*}
+
+\end{document}

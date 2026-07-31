@@ -1,0 +1,57 @@
+% MACABEU architecture diagram. Drop into the paper inside a figure environment
+% (single-column is enough — the figure is now compact).
+% Requires (in preamble):
+%   \usepackage{tikz,amsmath,amssymb}
+%   \usetikzlibrary{positioning,arrows.meta,fit,backgrounds,calc}
+
+\begin{tikzpicture}[
+    >=Latex,
+    font=\footnotesize,
+    node distance=6mm and 6mm,
+    box/.style={draw, rounded corners=2pt, align=center,
+                minimum height=7mm, minimum width=16mm, inner sep=2pt},
+    data/.style={box, fill=gray!12},
+    proc/.style={box, fill=blue!10},
+    act/.style ={box, fill=orange!18},
+    note/.style={font=\footnotesize\itshape, black},
+    arrow/.style={->, thick},
+    dashed-arrow/.style={->, thick, dashed, black!60},
+]
+
+% Top row: defender pipeline
+\node[data] (x)        {$x$};
+\node[proc, right=of x]    (feat) {$\phi(x)$};
+\node[proc, right=of feat] (qnet) {$Q(\phi,\cdot)$};
+\node[act,  right=of qnet] (act)  {$a\!\sim\!\varepsilon\text{-greedy}$};
+
+\draw[arrow] (x)    -- (feat);
+\draw[arrow] (feat) -- (qnet);
+\draw[arrow] (qnet) -- (act);
+
+% Bottom row: environment
+\node[data, below=18mm of feat] (xprime) {$x' = a(x)$};
+\node[proc, right=of xprime]    (vic)    {$f_\theta(x')$};
+\node[act,  right=of vic]       (rew)    {$r = \mathbf{1}[\hat{y}{=}y]{-}c(a)$};
+
+\draw[arrow] (xprime) -- (vic);
+\draw[arrow] (vic)    -- (rew);
+
+% Defender grouping
+\begin{pgfonlayer}{background}
+  \node[draw=blue!40, dashed, rounded corners=3pt,
+        fit=(feat)(qnet)(act),
+        inner sep=2.5mm,
+        label={[note, anchor=south west, yshift=0.5mm]north west:Defender (MACABEU)}] (defbox) {};
+\end{pgfonlayer}
+
+% Apply action arrow (action -> defended input)
+\coordinate (apply-bend) at ($(act.south |- defbox.south)+(0,-4mm)$);
+\draw[arrow] (act.south) -- (apply-bend) -| (xprime.north);
+
+% Reward feedback to Q-network (dashed update)
+\coordinate (upd-right) at ($(rew.east)+(4mm,0)$);
+\coordinate (upd-top)   at ($(qnet.north |- defbox.north)+(0,4mm)$);
+\draw[dashed-arrow] (rew.east) -- (upd-right) |- (upd-top) -| (qnet.north);
+\node[note, anchor=south, yshift=0.5mm] at (upd-top) {update};
+
+\end{tikzpicture}

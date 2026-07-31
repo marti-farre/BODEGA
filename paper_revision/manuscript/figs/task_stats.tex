@@ -1,0 +1,16 @@
+% Per-task statistics table. Drop into the paper inside a table environment.
+% Numbers were computed from data/<task>/{train,dev,attack}.tsv on
+% 2026-05-15 (no header rows in BODEGA TSVs, so line counts are exact).
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Task} & \textbf{Train} & \textbf{Dev} & \textbf{Attack} & \textbf{\% pos.} & \shortstack{\textbf{Mean /}\\\textbf{med.\ words}} \\
+\midrule
+PR2 & 12{,}675  & 3{,}320  & 416 & 29.6 & 21 / 18 \\
+FC  & 172{,}763 & 19{,}010 & 405 & 50.6 & 39 / 31 \\
+HN  & 60{,}235  & 3{,}600  & 400 & 50.5 & 605 / 444 \\
+RD  & 8{,}694   & 2{,}070  & 415 & 32.8 & 253 / 164 \\
+\bottomrule
+\end{tabular}

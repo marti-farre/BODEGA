@@ -1,0 +1,1234 @@
+% ---------- Foundations: adversarial examples ----------
+
+% [CONFIRMED]
+@inproceedings{Szegedy2014,
+  author       = {Christian Szegedy and
+                  Wojciech Zaremba and
+                  Ilya Sutskever and
+                  Joan Bruna and
+                  Dumitru Erhan and
+                  Ian J. Goodfellow and
+                  Rob Fergus},
+  editor       = {Yoshua Bengio and
+                  Yann LeCun},
+  title        = {Intriguing properties of neural networks},
+  booktitle    = {2nd International Conference on Learning Representations, {ICLR} 2014,
+                  Banff, AB, Canada, April 14-16, 2014, Conference Track Proceedings},
+  year         = {2014},
+  url          = {http://arxiv.org/abs/1312.6199},
+  timestamp    = {Thu, 25 Jul 2019 14:35:25 +0200},
+  biburl       = {https://dblp.org/rec/journals/corr/SzegedyZSBEGF13.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Goodfellow2015,
+  author       = {Ian J. Goodfellow and
+                  Jonathon Shlens and
+                  Christian Szegedy},
+  editor       = {Yoshua Bengio and
+                  Yann LeCun},
+  title        = {Explaining and Harnessing Adversarial Examples},
+  booktitle    = {3rd International Conference on Learning Representations, {ICLR} 2015,
+                  San Diego, CA, USA, May 7-9, 2015, Conference Track Proceedings},
+  year         = {2015},
+  url          = {http://arxiv.org/abs/1412.6572},
+  timestamp    = {Thu, 25 Jul 2019 14:25:38 +0200},
+  biburl       = {https://dblp.org/rec/journals/corr/GoodfellowSS14.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Tramer2020,
+  author       = {Florian Tram{\`{e}}r and
+                  Nicholas Carlini and
+                  Wieland Brendel and
+                  Aleksander Madry},
+  editor       = {Hugo Larochelle and
+                  Marc'Aurelio Ranzato and
+                  Raia Hadsell and
+                  Maria{-}Florina Balcan and
+                  Hsuan{-}Tien Lin},
+  title        = {On Adaptive Attacks to Adversarial Example Defenses},
+  booktitle    = {Advances in Neural Information Processing Systems 33: Annual Conference
+                  on Neural Information Processing Systems 2020, NeurIPS 2020, December
+                  6-12, 2020, virtual},
+  year         = {2020},
+  url          = {https://proceedings.neurips.cc/paper/2020/hash/11f38f8ecd71867b42433548d1078e38-Abstract.html},
+  timestamp    = {Sun, 02 Oct 2022 16:13:03 +0200},
+  biburl       = {https://dblp.org/rec/conf/nips/TramerCBM20.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Athalye2018,
+  author       = {Anish Athalye and
+                  Nicholas Carlini and
+                  David A. Wagner},
+  editor       = {Jennifer G. Dy and
+                  Andreas Krause},
+  title        = {Obfuscated Gradients Give a False Sense of Security: Circumventing
+                  Defenses to Adversarial Examples},
+  booktitle    = {Proceedings of the 35th International Conference on Machine Learning,
+                  {ICML} 2018, Stockholmsm{\"{a}}ssan, Stockholm, Sweden, July
+                  10-15, 2018},
+  series       = {Proceedings of Machine Learning Research},
+  pages        = {274--283},
+  publisher    = {{PMLR}},
+  year         = {2018},
+  url          = {http://proceedings.mlr.press/v80/athalye18a.html},
+  timestamp    = {Wed, 03 Apr 2019 18:17:30 +0200},
+  biburl       = {https://dblp.org/rec/conf/icml/AthalyeC018.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% ---------- RL / bandits / optimisers ----------
+
+% [CONFIRMED]
+@book{SuttonBarto2018,
+  address = {Cambridge, Massachusetts},
+	edition = {Second edition},
+	series = {Adaptive computation and machine learning series},
+	title = {Reinforcement learning: an introduction},
+	isbn = {978-0-262-03924-6},
+	shorttitle = {Reinforcement learning},
+	abstract = {"Reinforcement learning, one of the most active research areas in artificial intelligence, is a computational approach to learning whereby an agent tries to maximize the total amount of reward it receives while interacting with a complex, uncertain environment. In Reinforcement Learning, Richard Sutton and Andrew Barto provide a clear and simple account of the field's key ideas and algorithms."--},
+	language = {en},
+	publisher = {The MIT Press},
+	author = {Sutton, Richard S. and Barto, Andrew G.},
+	year = {2018},
+	keywords = {/unread, Reinforcement learning},
+}
+
+% [CONFIRMED]
+@article{Watkins1992,
+  title = {Q-Learning},
+  author = {Watkins, Christopher J. C. H. and Dayan, Peter},
+  year = {1992},
+  journal = {Machine Learning},
+  volume = {8},
+  pages = {279--292},
+  issn = {0885-6125},
+  doi = {10.1007/bf00992698},
+  url = {https://doi.org/10.1007/bf00992698},
+  abstract = {Q-learning (Watkins, 1989) is a simple way for agents to learn how to act optimally in controlled Markovian domains. It amounts to an incremental method for dynamic programming which imposes limited computational demands. It works by successively improving its evaluations of the quality of particular actions at particular states. This paper presents and proves in detail a convergence theorem for Q-learning based on that outlined in Watkins (1989). We show that Q-learning converges to the optimum action-values with probability 1 so long as all actions are repeatedly sampled in all states and the action-values are represented discretely. We also sketch extensions to the cases of non-discounted, but absorbing, Markov environments, and where many Q values can be changed each iteration, rather than just one.},
+  keywords = {*imported-from-citeulike-INRMM,~INRMM-MiD:c-2003517,machine-learning,q-learning},
+  number = {3-4},
+  doi     = {10.1007/bf00992698},
+}
+
+% [CONFIRMED]
+@article{Mnih2015,
+  author       = {Volodymyr Mnih and
+                  Koray Kavukcuoglu and
+                  David Silver and
+                  Andrei A. Rusu and
+                  Joel Veness and
+                  Marc G. Bellemare and
+                  Alex Graves and
+                  Martin A. Riedmiller and
+                  Andreas Fidjeland and
+                  Georg Ostrovski and
+                  Stig Petersen and
+                  Charles Beattie and
+                  Amir Sadik and
+                  Ioannis Antonoglou and
+                  Helen King and
+                  Dharshan Kumaran and
+                  Daan Wierstra and
+                  Shane Legg and
+                  Demis Hassabis},
+  title        = {Human-level control through deep reinforcement learning},
+  journal      = {Nat.},
+  volume       = {518},
+  number       = {7540},
+  pages        = {529--533},
+  year         = {2015},
+  url          = {https://doi.org/10.1038/nature14236},
+  doi          = {10.1038/NATURE14236},
+  timestamp    = {Wed, 24 Sep 2025 16:21:16 +0200},
+  biburl       = {https://dblp.org/rec/journals/nature/MnihKSRVBGRFOPB15.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Kingma2015,
+  author    = {Kingma, Diederik P. and Ba, Jimmy},
+  title     = {Adam: A Method for Stochastic Optimization},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2015},
+  url       = {https://arxiv.org/abs/1412.6980}
+}
+
+% [CONFIRMED]
+@inproceedings{LiContextualBandit2010,
+  author       = {Lihong Li and
+                  Wei Chu and
+                  John Langford and
+                  Robert E. Schapire},
+  editor       = {Michael Rappa and
+                  Paul Jones and
+                  Juliana Freire and
+                  Soumen Chakrabarti},
+  title        = {A contextual-bandit approach to personalized news article recommendation},
+  booktitle    = {Proceedings of the 19th International Conference on World Wide Web,
+                  {WWW} 2010, Raleigh, North Carolina, USA, April 26-30, 2010},
+  pages        = {661--670},
+  publisher    = {{ACM}},
+  year         = {2010},
+  url          = {https://doi.org/10.1145/1772690.1772758},
+  doi          = {10.1145/1772690.1772758},
+  timestamp    = {Tue, 06 Nov 2018 16:57:07 +0100},
+  biburl       = {https://dblp.org/rec/conf/www/LiCLS10.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Langford2008,
+  author       = {John Langford and
+                  Tong Zhang},
+  editor       = {John C. Platt and
+                  Daphne Koller and
+                  Yoram Singer and
+                  Sam T. Roweis},
+  title        = {The Epoch-Greedy Algorithm for Multi-armed Bandits with Side Information},
+  booktitle    = {Advances in Neural Information Processing Systems 20, Proceedings
+                  of the Twenty-First Annual Conference on Neural Information Processing
+                  Systems, Vancouver, British Columbia, Canada, December 3-6, 2007},
+  pages        = {817--824},
+  publisher    = {Curran Associates, Inc.},
+  year         = {2007},
+  url          = {https://proceedings.neurips.cc/paper/2007/hash/4b04a686b0ad13dce35fa99fa4161c65-Abstract.html},
+  timestamp    = {Mon, 16 May 2022 15:41:51 +0200},
+  biburl       = {https://dblp.org/rec/conf/nips/LangfordZ07.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% ---------- Models / embeddings ----------
+
+% [CONFIRMED]
+@inproceedings{Pennington2014,
+  author       = {Jeffrey Pennington and
+                  Richard Socher and
+                  Christopher D. Manning},
+  editor       = {Alessandro Moschitti and
+                  Bo Pang and
+                  Walter Daelemans},
+  title        = {Glove: Global Vectors for Word Representation},
+  booktitle    = {Proceedings of the 2014 Conference on Empirical Methods in Natural
+                  Language Processing, {EMNLP} 2014, October 25-29, 2014, Doha, Qatar,
+                  {A} meeting of SIGDAT, a Special Interest Group of the {ACL}},
+  pages        = {1532--1543},
+  publisher    = {{ACL}},
+  year         = {2014},
+  url          = {https://doi.org/10.3115/v1/d14-1162},
+  doi          = {10.3115/V1/D14-1162},
+  timestamp    = {Fri, 06 Aug 2021 00:40:40 +0200},
+  biburl       = {https://dblp.org/rec/conf/emnlp/PenningtonSM14.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Devlin2019,
+  author       = {Jacob Devlin and
+                  Ming{-}Wei Chang and
+                  Kenton Lee and
+                  Kristina Toutanova},
+  editor       = {Jill Burstein and
+                  Christy Doran and
+                  Thamar Solorio},
+  title        = {{BERT:} Pre-training of Deep Bidirectional Transformers for Language
+                  Understanding},
+  booktitle    = {Proceedings of the 2019 Conference of the North American Chapter of
+                  the Association for Computational Linguistics: Human Language Technologies,
+                  {NAACL-HLT} 2019, Minneapolis, MN, USA, June 2-7, 2019, Volume 1 (Long
+                  and Short Papers)},
+  pages        = {4171--4186},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2019},
+  url          = {https://doi.org/10.18653/v1/n19-1423},
+  doi          = {10.18653/V1/N19-1423},
+  timestamp    = {Mon, 26 Sep 2022 12:21:55 +0200},
+  biburl       = {https://dblp.org/rec/conf/naacl/DevlinCLT19.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Dettmers2023,
+  author       = {Tim Dettmers and
+                  Artidoro Pagnoni and
+                  Ari Holtzman and
+                  Luke Zettlemoyer},
+  editor       = {Alice Oh and
+                  Tristan Naumann and
+                  Amir Globerson and
+                  Kate Saenko and
+                  Moritz Hardt and
+                  Sergey Levine},
+  title        = {QLoRA: Efficient Finetuning of Quantized LLMs},
+  booktitle    = {Advances in Neural Information Processing Systems 36: Annual Conference
+                  on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans,
+                  LA, USA, December 10 - 16, 2023},
+  year         = {2023},
+  url          = {http://papers.nips.cc/paper\_files/paper/2023/hash/1feb87871436031bdc0f2beaa62a049b-Abstract-Conference.html},
+  timestamp    = {Fri, 01 Mar 2024 16:26:19 +0100},
+  biburl       = {https://dblp.org/rec/conf/nips/DettmersPHZ23.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@article{Gemma2024,
+  author       = {Gemma Team},
+  title        = {Gemma: Open Models Based on Gemini Research and Technology},
+  journal      = {CoRR},
+  volume       = {abs/2403.08295},
+  year         = {2024},
+  url          = {https://doi.org/10.48550/arXiv.2403.08295},
+  doi          = {10.48550/ARXIV.2403.08295},
+  eprinttype   = {arXiv},
+  eprint       = {2403.08295},
+  timestamp    = {Fri, 31 Oct 2025 15:30:11 +0100},
+  biburl       = {https://dblp.org/rec/journals/corr/abs-2403-08295.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% ---------- Attacks ----------
+
+% [CONFIRMED]
+@inproceedings{Gao2018,
+  author       = {Ji Gao and
+                  Jack Lanchantin and
+                  Mary Lou Soffa and
+                  Yanjun Qi},
+  title        = {Black-Box Generation of Adversarial Text Sequences to Evade Deep Learning
+                  Classifiers},
+  booktitle    = {2018 {IEEE} Security and Privacy Workshops, {SP} Workshops 2018, San
+                  Francisco, CA, USA, May 24, 2018},
+  pages        = {50--56},
+  publisher    = {{IEEE} Computer Society},
+  year         = {2018},
+  url          = {https://doi.org/10.1109/SPW.2018.00016},
+  doi          = {10.1109/SPW.2018.00016},
+  timestamp    = {Wed, 16 Oct 2019 14:14:51 +0200},
+  biburl       = {https://dblp.org/rec/conf/sp/GaoLSQ18.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Eger2019,
+  author       = {Steffen Eger and
+                  G{\"{o}}zde G{\"{u}}l Sahin and
+                  Andreas R{\"{u}}ckl{\'{e}} and
+                  Ji{-}Ung Lee and
+                  Claudia Schulz and
+                  Mohsen Mesgar and
+                  Krishnkant Swarnkar and
+                  Edwin Simpson and
+                  Iryna Gurevych},
+  editor       = {Jill Burstein and
+                  Christy Doran and
+                  Thamar Solorio},
+  title        = {Text Processing Like Humans Do: Visually Attacking and Shielding {NLP}
+                  Systems},
+  booktitle    = {Proceedings of the 2019 Conference of the North American Chapter of
+                  the Association for Computational Linguistics: Human Language Technologies,
+                  {NAACL-HLT} 2019, Minneapolis, MN, USA, June 2-7, 2019, Volume 1 (Long
+                  and Short Papers)},
+  pages        = {1634--1647},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2019},
+  url          = {https://doi.org/10.18653/v1/n19-1165},
+  doi          = {10.18653/V1/N19-1165},
+  timestamp    = {Fri, 06 Aug 2021 00:41:31 +0200},
+  biburl       = {https://dblp.org/rec/conf/naacl/EgerSRL0MSSG19.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Jin2020,
+  author       = {Di Jin and
+                  Zhijing Jin and
+                  Joey Tianyi Zhou and
+                  Peter Szolovits},
+  title        = {Is {BERT} Really Robust? {A} Strong Baseline for Natural Language
+                  Attack on Text Classification and Entailment},
+  booktitle    = {The Thirty-Fourth {AAAI} Conference on Artificial Intelligence, {AAAI}
+                  2020, The Thirty-Second Innovative Applications of Artificial Intelligence
+                  Conference, {IAAI} 2020, The Tenth {AAAI} Symposium on Educational
+                  Advances in Artificial Intelligence, {EAAI} 2020, New York, NY, USA,
+                  February 7-12, 2020},
+  pages        = {8018--8025},
+  publisher    = {{AAAI} Press},
+  year         = {2020},
+  url          = {https://doi.org/10.1609/aaai.v34i05.6311},
+  doi          = {10.1609/AAAI.V34I05.6311},
+  timestamp    = {Wed, 18 Mar 2026 17:07:12 +0100},
+  biburl       = {https://dblp.org/rec/conf/aaai/JinJZS20.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Li2020bert,
+  author       = {Linyang Li and
+                  Ruotian Ma and
+                  Qipeng Guo and
+                  Xiangyang Xue and
+                  Xipeng Qiu},
+  editor       = {Bonnie Webber and
+                  Trevor Cohn and
+                  Yulan He and
+                  Yang Liu},
+  title        = {{BERT-ATTACK:} Adversarial Attack Against {BERT} Using {BERT}},
+  booktitle    = {Proceedings of the 2020 Conference on Empirical Methods in Natural
+                  Language Processing, {EMNLP} 2020, Online, November 16-20, 2020},
+  pages        = {6193--6202},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2020},
+  url          = {https://doi.org/10.18653/v1/2020.emnlp-main.500},
+  doi          = {10.18653/V1/2020.EMNLP-MAIN.500},
+  timestamp    = {Tue, 01 Oct 2024 17:31:10 +0200},
+  biburl       = {https://dblp.org/rec/conf/emnlp/LiMGXQ20.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Ren2019,
+  author       = {Shuhuai Ren and
+                  Yihe Deng and
+                  Kun He and
+                  Wanxiang Che},
+  editor       = {Anna Korhonen and
+                  David R. Traum and
+                  Llu{\'{\i}}s M{\`{a}}rquez},
+  title        = {Generating Natural Language Adversarial Examples through Probability
+                  Weighted Word Saliency},
+  booktitle    = {Proceedings of the 57th Conference of the Association for Computational
+                  Linguistics, {ACL} 2019, Florence, Italy, July 28- August 2, 2019,
+                  Volume 1: Long Papers},
+  pages        = {1085--1097},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2019},
+  url          = {https://doi.org/10.18653/v1/p19-1103},
+  doi          = {10.18653/V1/P19-1103},
+  timestamp    = {Fri, 06 Aug 2021 00:41:05 +0200},
+  biburl       = {https://dblp.org/rec/conf/acl/RenDHC19.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Iyyer2018,
+  author       = {Mohit Iyyer and
+                  John Wieting and
+                  Kevin Gimpel and
+                  Luke Zettlemoyer},
+  editor       = {Marilyn A. Walker and
+                  Heng Ji and
+                  Amanda Stent},
+  title        = {Adversarial Example Generation with Syntactically Controlled Paraphrase
+                  Networks},
+  booktitle    = {Proceedings of the 2018 Conference of the North American Chapter of
+                  the Association for Computational Linguistics: Human Language Technologies,
+                  {NAACL-HLT} 2018, New Orleans, Louisiana, USA, June 1-6, 2018, Volume
+                  1 (Long Papers)},
+  pages        = {1875--1885},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2018},
+  url          = {https://doi.org/10.18653/v1/n18-1170},
+  doi          = {10.18653/V1/N18-1170},
+  timestamp    = {Fri, 06 Aug 2021 00:41:31 +0200},
+  biburl       = {https://dblp.org/rec/conf/naacl/IyyerWGZ18.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Alzantot2018,
+  author       = {Moustafa Alzantot and
+                  Yash Sharma and
+                  Ahmed Elgohary and
+                  Bo{-}Jhang Ho and
+                  Mani B. Srivastava and
+                  Kai{-}Wei Chang},
+  editor       = {Ellen Riloff and
+                  David Chiang and
+                  Julia Hockenmaier and
+                  Jun'ichi Tsujii},
+  title        = {Generating Natural Language Adversarial Examples},
+  booktitle    = {Proceedings of the 2018 Conference on Empirical Methods in Natural
+                  Language Processing, Brussels, Belgium, October 31 - November 4, 2018},
+  pages        = {2890--2896},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2018},
+  url          = {https://doi.org/10.18653/v1/d18-1316},
+  doi          = {10.18653/V1/D18-1316},
+  timestamp    = {Thu, 09 Apr 2026 16:31:57 +0200},
+  biburl       = {https://dblp.org/rec/conf/emnlp/AlzantotSEHSC18.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Zang2020,
+  author       = {Yuan Zang and
+                  Fanchao Qi and
+                  Chenghao Yang and
+                  Zhiyuan Liu and
+                  Meng Zhang and
+                  Qun Liu and
+                  Maosong Sun},
+  editor       = {Dan Jurafsky and
+                  Joyce Chai and
+                  Natalie Schluter and
+                  Joel R. Tetreault},
+  title        = {Word-level Textual Adversarial Attacking as Combinatorial Optimization},
+  booktitle    = {Proceedings of the 58th Annual Meeting of the Association for Computational
+                  Linguistics, {ACL} 2020, Online, July 5-10, 2020},
+  pages        = {6066--6080},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2020},
+  url          = {https://doi.org/10.18653/v1/2020.acl-main.540},
+  doi          = {10.18653/V1/2020.ACL-MAIN.540},
+  timestamp    = {Fri, 18 Jul 2025 16:32:57 +0200},
+  biburl       = {https://dblp.org/rec/conf/acl/ZangQYLZLS20.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Zeng2021,
+  author       = {Guoyang Zeng and
+                  Fanchao Qi and
+                  Qianrui Zhou and
+                  Tingji Zhang and
+                  Zixian Ma and
+                  Bairu Hou and
+                  Yuan Zang and
+                  Zhiyuan Liu and
+                  Maosong Sun},
+  editor       = {Heng Ji and
+                  Jong C. Park and
+                  Rui Xia},
+  title        = {OpenAttack: An Open-source Textual Adversarial Attack Toolkit},
+  booktitle    = {Proceedings of the Joint Conference of the 59th Annual Meeting of
+                  the Association for Computational Linguistics and the 11th International
+                  Joint Conference on Natural Language Processing, {ACL} 2021 - System
+                  Demonstrations, Online, August 1-6, 2021},
+  pages        = {363--371},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2021},
+  url          = {https://doi.org/10.18653/v1/2021.acl-demo.43},
+  doi          = {10.18653/V1/2021.ACL-DEMO.43},
+  timestamp    = {Fri, 01 Sep 2023 13:50:17 +0200},
+  biburl       = {https://dblp.org/rec/conf/acl/ZengQZZMHZLS21.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Morris2020,
+  author       = {John X. Morris and
+                  Eli Lifland and
+                  Jin Yong Yoo and
+                  Jake Grigsby and
+                  Di Jin and
+                  Yanjun Qi},
+  editor       = {Qun Liu and
+                  David Schlangen},
+  title        = {TextAttack: {A} Framework for Adversarial Attacks, Data Augmentation,
+                  and Adversarial Training in {NLP}},
+  booktitle    = {Proceedings of the 2020 Conference on Empirical Methods in Natural
+                  Language Processing: System Demonstrations, {EMNLP} 2020 - Demos,
+                  Online, November 16-20, 2020},
+  pages        = {119--126},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2020},
+  url          = {https://doi.org/10.18653/v1/2020.emnlp-demos.16},
+  doi          = {10.18653/V1/2020.EMNLP-DEMOS.16},
+  timestamp    = {Wed, 08 Sep 2021 16:17:48 +0200},
+  biburl       = {https://dblp.org/rec/conf/emnlp/MorrisLYGJQ20.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@article{ZouUniversalLLM2023,
+  author       = {Andy Zou and
+                  Zifan Wang and
+                  J. Zico Kolter and
+                  Matt Fredrikson},
+  title        = {Universal and Transferable Adversarial Attacks on Aligned Language
+                  Models},
+  journal      = {CoRR},
+  volume       = {abs/2307.15043},
+  year         = {2023},
+  url          = {https://doi.org/10.48550/arXiv.2307.15043},
+  doi          = {10.48550/ARXIV.2307.15043},
+  eprinttype   = {arXiv},
+  eprint       = {2307.15043},
+  timestamp    = {Sun, 06 Oct 2024 21:23:57 +0200},
+  biburl       = {https://dblp.org/rec/journals/corr/abs-2307-15043.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% ---------- Misinformation / fake-news related ----------
+
+% [CONFIRMED]
+@proceedings{Zellers2019grover,
+  editor       = {Amir Globersons and
+                  Lester Mackey and
+                  Danielle Belgrave and
+                  Angela Fan and
+                  Ulrich Paquet and
+                  Jakub M. Tomczak and
+                  Cheng Zhang},
+  title        = {Advances in Neural Information Processing Systems 38: Annual Conference
+                  on Neural Information Processing Systems 2024, NeurIPS 2024, Vancouver,
+                  BC, Canada, December 10 - 15, 2024},
+  year         = {2024},
+  url          = {https://papers.nips.cc/paper\_files/paper/2024},
+  timestamp    = {Wed, 05 Feb 2025 13:33:45 +0100},
+  biburl       = {https://dblp.org/rec/conf/nips/2024.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% ---------- LLM-driven attacks on credibility classifiers ----------
+% These entries come from the supervisor's Scholar "cited by" links on the
+% BODEGA paper. Authors / titles confirmed from the screenshots provided.
+% Please VERIFY the exact venue/year/pages before submitting -- the screenshots
+% only showed the title and lead authors.
+
+% [CONFIRMED]
+@inproceedings{Przybyla2025LLMattack,
+  title = "Attacking Misinformation Detection Using Adversarial Examples Generated by Language Models",
+    author = "Przyby{\l}a, Piotr  and
+      McGill, Euan  and
+      Saggion, Horacio",
+    editor = "Christodoulopoulos, Christos  and
+      Chakraborty, Tanmoy  and
+      Rose, Carolyn  and
+      Peng, Violet",
+    booktitle = "Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing",
+    month = nov,
+    year = "2025",
+    address = "Suzhou, China",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.emnlp-main.1405/",
+    doi = "10.18653/v1/2025.emnlp-main.1405",
+    pages = "27626--27642",
+    ISBN = "979-8-89176-332-6",
+    abstract = "Large language models have many beneficial applications, but can they also be used to attack content-filtering algorithms in social media platforms? We investigate the challenge of generating adversarial examples to test the robustness of text classification algorithms detecting low-credibility content, including propaganda, false claims, rumours and hyperpartisan news. We focus on simulation of content moderation by setting realistic limits on the number of queries an attacker is allowed to attempt. Within our solution (TREPAT), initial rephrasings are generated by large language models with prompts inspired by meaning-preserving NLP tasks, such as text simplification and style transfer. Subsequently, these modifications are decomposed into small changes, applied through beam search procedure, until the victim classifier changes its decision. We perform (1) quantitative evaluation using various prompts, models and query limits, (2) targeted manual assessment of the generated text and (3) qualitative linguistic analysis. The results confirm the superiority of our approach in the constrained scenario, especially in case of long input text (news articles), where exhaustive search is not feasible."
+}
+
+% [CONFIRMED]
+@article{Bethany2025camouflage,
+  author       = {Mazal Bethany and
+                  Nishant Vishwamitra and
+                  Cho{-}Yu Jason Chiang and
+                  Peyman Najafirad},
+  title        = {{CAMOUFLAGE:} Exploiting Misinformation Detection Systems Through
+                  LLM-driven Adversarial Claim Transformation},
+  journal      = {CoRR},
+  volume       = {abs/2505.01900},
+  year         = {2025},
+  url          = {https://doi.org/10.48550/arXiv.2505.01900},
+  doi          = {10.48550/ARXIV.2505.01900},
+  eprinttype   = {arXiv},
+  eprint       = {2505.01900},
+  timestamp    = {Wed, 18 Jun 2025 21:56:11 +0200},
+  biburl       = {https://dblp.org/rec/journals/corr/abs-2505-01900.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@article{Aldahoul2025multiagent,
+  author       = {Nouar AlDahoul and
+                  Yasir Zaki},
+  title        = {Toward a Safer Web: Multilingual Multi-Agent LLMs for Mitigating Adversarial
+                  Misinformation Attacks},
+  journal      = {CoRR},
+  volume       = {abs/2510.08605},
+  year         = {2025},
+  url          = {https://doi.org/10.48550/arXiv.2510.08605},
+  doi          = {10.48550/ARXIV.2510.08605},
+  eprinttype   = {arXiv},
+  eprint       = {2510.08605},
+  timestamp    = {Tue, 11 Nov 2025 13:12:21 +0100},
+  biburl       = {https://dblp.org/rec/journals/corr/abs-2510-08605.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+
+}
+
+% [CONFIRMED]
+@inproceedings{Liu2025fcsurvey,
+  author       = {Fanzhen Liu and
+                  Sharif Abuadbba and
+                  Kristen Moore and
+                  Surya Nepal and
+                  C{\'{e}}cile Paris and
+                  Jia Wu and
+                  Jian Yang and
+                  Quan Z. Sheng},
+  editor       = {Christos Christodoulopoulos and
+                  Tanmoy Chakraborty and
+                  Carolyn Rose and
+                  Violet Peng},
+  title        = {Adversarial Attacks Against Automated Fact-Checking: {A} Survey},
+  booktitle    = {Proceedings of the 2025 Conference on Empirical Methods in Natural
+                  Language Processing, {EMNLP} 2025, Suzhou, China, November 4-9, 2025},
+  pages        = {22968--22990},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2025},
+  url          = {https://doi.org/10.18653/v1/2025.emnlp-main.1171},
+  doi          = {10.18653/V1/2025.EMNLP-MAIN.1171},
+  timestamp    = {Tue, 07 Apr 2026 20:21:59 +0200},
+  biburl       = {https://dblp.org/rec/conf/emnlp/LiuAMNPWYS25.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@article{Srba2026credibility,
+  author       = {Ivan Srba and
+                  Olesya Razuvayevskaya and
+                  Jo{\~{a}}o Augusto Leite and
+                  R{\'{o}}bert M{\'{o}}ro and
+                  Ipek Baris Schlicht and
+                  Sara Tonelli and
+                  Francisco Moreno Garc{\'{\i}}a and
+                  Santiago Barrio Lottmann and
+                  Denis Teyssou and
+                  Valentin Porcellini and
+                  Carolina Scarton and
+                  Kalina Bontcheva and
+                  M{\'{a}}ria Bielikov{\'{a}}},
+  title        = {A Survey on Automatic Credibility Assessment Using Textual Credibility
+                  Signals in the Era of Large Language Models},
+  journal      = {{ACM} Trans. Intell. Syst. Technol.},
+  volume       = {17},
+  number       = {2},
+  pages        = {26:1--26:80},
+  year         = {2026},
+  url          = {https://doi.org/10.1145/3770077},
+  doi          = {10.1145/3770077},
+  timestamp    = {Thu, 07 May 2026 20:25:54 +0200},
+  biburl       = {https://dblp.org/rec/journals/tist/SrbaRLMSTGLTPSBB26.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% ---------- Defences on credibility / claim-robustness side ----------
+
+% [CONFIRMED]
+@inproceedings{Magomere2025claimrobust,
+  author       = {Jabez Magomere and
+                  Emanuele La Malfa and
+                  Manuel Tonneau and
+                  Ashkan Kazemi and
+                  Scott A. Hale},
+  editor       = {Wanxiang Che and
+                  Joyce Nabende and
+                  Ekaterina Shutova and
+                  Mohammad Taher Pilehvar},
+  title        = {When Claims Evolve: Evaluating and Enhancing the Robustness of Embedding
+                  Models Against Misinformation Edits},
+  booktitle    = {Findings of the Association for Computational Linguistics, {ACL} 2025,
+                  Vienna, Austria, July 27 - August 1, 2025},
+  series       = {Findings of {ACL}},
+  pages        = {22374--22404},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2025},
+  url          = {https://doi.org/10.18653/v1/2025.findings-acl.1150},
+  doi          = {10.18653/V1/2025.FINDINGS-ACL.1150},
+  timestamp    = {Tue, 27 Jan 2026 20:27:02 +0100},
+  biburl       = {https://dblp.org/rec/conf/acl/MagomereMTKH25.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@article{Tong2025groupadaptive,
+  author       = {Zhao Tong and
+                  Chunlin Gong and
+                  Yimeng Gu and
+                  Haichao Shi and
+                  Qiang Liu and
+                  Shu Wu and
+                  Xiao{-}Yu Zhang},
+  title        = {Group-Adaptive Adversarial Learning for Robust Fake News Detection
+                  Against Malicious Comments},
+  journal      = {CoRR},
+  volume       = {abs/2510.09712},
+  year         = {2025},
+  url          = {https://doi.org/10.48550/arXiv.2510.09712},
+  doi          = {10.48550/ARXIV.2510.09712},
+  eprinttype   = {arXiv},
+  eprint       = {2510.09712},
+  timestamp    = {Tue, 11 Nov 2025 13:12:28 +0100},
+  biburl       = {https://dblp.org/rec/journals/corr/abs-2510-09712.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@article{Barron2024checkthat,
+  address = {},
+	year = {2024},
+	author = {Piskorski, J and Stefanovitch N and Alam F and Campos R and Dimitrov D and Alipio J and Pollak S and Ribin N and Fijavž Z and Hasanain M and Silvano P and Sartori E and Guimarães N and Zwitter Vitez A and Pacheco AF and Koychev I and Yu N and Nakov P and Da San Martino G},
+	abstract = {
+		We present an overview of Lab's 2024 Task 3, which is part of CLEF-2024. Task 3 focuses on building models capable of detecting 23 persuasion techniques at text-span level in online media. The task covers 5 languages, namely, Bulgarian, English, Portuguese, Russian and Slovene and highly-debated topics in the media, e.g., Isreali-Palestine conflict, Ukraine-Russia war, climate change, Covid-19, abortion, etc. 23 teams registered to the task, while 2 of them submitted system responses which were compared against a baseline and Task organizers' system using
+		state-of-the-art transformed-based architecture. We provide a description of the dataset and the overall task setup, including the evaluation methodology, and an overview of the participating systems. The datasets accompanied with the evaluation scripts are released to the research community, which we believe will foster the research on persuasion technique detection and analysis of online media content in various fields and contexts.
+		},
+	title = {Overview of the CLEF-2024 CheckThat! Lab Task 3 on Persuasion Techniques},
+	type = {},
+	url = {https://ceur-ws.org/Vol-3740/paper-26.pdf},
+	volume = {3740},
+	number = {},
+	journal = {CEUR WORKSHOP PROCEEDINGS},
+	pages = {Paper 26, pages 299-310},
+	issn = {1613-0073 (online)},
+	publisher = {ELSEVIER},
+	doi = {}
+}
+
+% ---------- Defences ----------
+
+% [CONFIRMED]
+@inproceedings{Madry2018,
+  author       = {Aleksander Madry and
+                  Aleksandar Makelov and
+                  Ludwig Schmidt and
+                  Dimitris Tsipras and
+                  Adrian Vladu},
+  title        = {Towards Deep Learning Models Resistant to Adversarial Attacks},
+  booktitle    = {6th International Conference on Learning Representations, {ICLR} 2018,
+                  Vancouver, BC, Canada, April 30 - May 3, 2018, Conference Track Proceedings},
+  publisher    = {OpenReview.net},
+  year         = {2018},
+  url          = {https://openreview.net/forum?id=rJzIBfZAb},
+  timestamp    = {Thu, 25 Jul 2019 14:25:44 +0200},
+  biburl       = {https://dblp.org/rec/conf/iclr/MadryMSTV18.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Miyato2017advtrain,
+  author       = {Takeru Miyato and
+                  Andrew M. Dai and
+                  Ian J. Goodfellow},
+  title        = {Adversarial Training Methods for Semi-Supervised Text Classification},
+  booktitle    = {5th International Conference on Learning Representations, {ICLR} 2017,
+                  Toulon, France, April 24-26, 2017, Conference Track Proceedings},
+  publisher    = {OpenReview.net},
+  year         = {2017},
+  url          = {https://openreview.net/forum?id=r1X3g2\_xl},
+  timestamp    = {Thu, 25 Jul 2019 14:25:48 +0200},
+  biburl       = {https://dblp.org/rec/conf/iclr/MiyatoDG17.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Jia2019cert,
+  author       = {Robin Jia and
+                  Aditi Raghunathan and
+                  Kerem G{\"{o}}ksel and
+                  Percy Liang},
+  editor       = {Kentaro Inui and
+                  Jing Jiang and
+                  Vincent Ng and
+                  Xiaojun Wan},
+  title        = {Certified Robustness to Adversarial Word Substitutions},
+  booktitle    = {Proceedings of the 2019 Conference on Empirical Methods in Natural
+                  Language Processing and the 9th International Joint Conference on
+                  Natural Language Processing, {EMNLP-IJCNLP} 2019, Hong Kong, China,
+                  November 3-7, 2019},
+  pages        = {4127--4140},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2019},
+  url          = {https://doi.org/10.18653/v1/D19-1423},
+  doi          = {10.18653/V1/D19-1423},
+  timestamp    = {Sun, 06 Oct 2024 21:00:50 +0200},
+  biburl       = {https://dblp.org/rec/conf/emnlp/JiaRGL19.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Ye2020safer,
+  author       = {Mao Ye and
+                  Chengyue Gong and
+                  Qiang Liu},
+  editor       = {Dan Jurafsky and
+                  Joyce Chai and
+                  Natalie Schluter and
+                  Joel R. Tetreault},
+  title        = {{SAFER:} {A} Structure-free Approach for Certified Robustness to Adversarial
+                  Word Substitutions},
+  booktitle    = {Proceedings of the 58th Annual Meeting of the Association for Computational
+                  Linguistics, {ACL} 2020, Online, July 5-10, 2020},
+  pages        = {3465--3475},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2020},
+  url          = {https://doi.org/10.18653/v1/2020.acl-main.317},
+  doi          = {10.18653/V1/2020.ACL-MAIN.317},
+  timestamp    = {Wed, 15 Mar 2023 15:12:52 +0100},
+  biburl       = {https://dblp.org/rec/conf/acl/YeGL20.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Zhu2020freelb,
+  author       = {Chen Zhu and
+                  Yu Cheng and
+                  Zhe Gan and
+                  Siqi Sun and
+                  Tom Goldstein and
+                  Jingjing Liu},
+  title        = {FreeLB: Enhanced Adversarial Training for Natural Language Understanding},
+  booktitle    = {8th International Conference on Learning Representations, {ICLR} 2020,
+                  Addis Ababa, Ethiopia, April 26-30, 2020},
+  publisher    = {OpenReview.net},
+  year         = {2020},
+  url          = {https://openreview.net/forum?id=BygzbyHFvB},
+  timestamp    = {Wed, 16 Aug 2023 21:16:38 +0200},
+  biburl       = {https://dblp.org/rec/conf/iclr/ZhuCGSGL20.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Mozes2021fgws,
+  author       = {Maximilian Mozes and
+                  Pontus Stenetorp and
+                  Bennett Kleinberg and
+                  Lewis D. Griffin},
+  editor       = {Paola Merlo and
+                  J{\"{o}}rg Tiedemann and
+                  Reut Tsarfaty},
+  title        = {Frequency-Guided Word Substitutions for Detecting Textual Adversarial
+                  Examples},
+  booktitle    = {Proceedings of the 16th Conference of the European Chapter of the
+                  Association for Computational Linguistics: Main Volume, {EACL} 2021,
+                  Online, April 19 - 23, 2021},
+  pages        = {171--186},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2021},
+  url          = {https://doi.org/10.18653/v1/2021.eacl-main.13},
+  doi          = {10.18653/V1/2021.EACL-MAIN.13},
+  timestamp    = {Thu, 20 Jan 2022 10:02:56 +0100},
+  biburl       = {https://dblp.org/rec/conf/eacl/MozesSKG21.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Zhou2019disp,
+  author       = {Yichao Zhou and
+                  Jyun{-}Yu Jiang and
+                  Kai{-}Wei Chang and
+                  Wei Wang},
+  editor       = {Kentaro Inui and
+                  Jing Jiang and
+                  Vincent Ng and
+                  Xiaojun Wan},
+  title        = {Learning to Discriminate Perturbations for Blocking Adversarial Attacks
+                  in Text Classification},
+  booktitle    = {Proceedings of the 2019 Conference on Empirical Methods in Natural
+                  Language Processing and the 9th International Joint Conference on
+                  Natural Language Processing, {EMNLP-IJCNLP} 2019, Hong Kong, China,
+                  November 3-7, 2019},
+  pages        = {4903--4912},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2019},
+  url          = {https://doi.org/10.18653/v1/D19-1496},
+  doi          = {10.18653/V1/D19-1496},
+  timestamp    = {Tue, 16 Dec 2025 08:07:07 +0100},
+  biburl       = {https://dblp.org/rec/conf/emnlp/ZhouJCW19.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Pruthi2019combating,
+  author       = {Danish Pruthi and
+                  Bhuwan Dhingra and
+                  Zachary C. Lipton},
+  editor       = {Anna Korhonen and
+                  David R. Traum and
+                  Llu{\'{\i}}s M{\`{a}}rquez},
+  title        = {Combating Adversarial Misspellings with Robust Word Recognition},
+  booktitle    = {Proceedings of the 57th Conference of the Association for Computational
+                  Linguistics, {ACL} 2019, Florence, Italy, July 28- August 2, 2019,
+                  Volume 1: Long Papers},
+  pages        = {5582--5591},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2019},
+  url          = {https://doi.org/10.18653/v1/p19-1561},
+  doi          = {10.18653/V1/P19-1561},
+  timestamp    = {Fri, 06 Aug 2021 00:41:01 +0200},
+  biburl       = {https://dblp.org/rec/conf/acl/PruthiDL19.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Jones2020robenc,
+  author       = {Erik Jones and
+                  Robin Jia and
+                  Aditi Raghunathan and
+                  Percy Liang},
+  editor       = {Dan Jurafsky and
+                  Joyce Chai and
+                  Natalie Schluter and
+                  Joel R. Tetreault},
+  title        = {Robust Encodings: {A} Framework for Combating Adversarial Typos},
+  booktitle    = {Proceedings of the 58th Annual Meeting of the Association for Computational
+                  Linguistics, {ACL} 2020, Online, July 5-10, 2020},
+  pages        = {2752--2765},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2020},
+  url          = {https://doi.org/10.18653/v1/2020.acl-main.245},
+  doi          = {10.18653/V1/2020.ACL-MAIN.245},
+  timestamp    = {Sun, 06 Oct 2024 20:55:31 +0200},
+  biburl       = {https://dblp.org/rec/conf/acl/JonesJRL20.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@article{Robey2023smoothllm,
+  author       = {Alexander Robey and
+                  Eric Wong and
+                  Hamed Hassani and
+                  George J. Pappas},
+  title        = {SmoothLLM: Defending Large Language Models Against Jailbreaking Attacks},
+  journal      = {Trans. Mach. Learn. Res.},
+  volume       = {2025},
+  year         = {2025},
+  url          = {https://openreview.net/forum?id=laPAh2hRFC},
+  timestamp    = {Mon, 23 Jun 2025 16:40:29 +0200},
+  biburl       = {https://dblp.org/rec/journals/tmlr/Robey0HP25.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Moraffah2024purification,
+  author       = {Raha Moraffah and
+                  Shubh Khandelwal and
+                  Amrita Bhattacharjee and
+                  Huan Liu},
+  editor       = {De{-}Nian Yang and
+                  Xing Xie and
+                  Vincent S. Tseng and
+                  Jian Pei and
+                  Jen{-}Wei Huang and
+                  Jerry Chun{-}Wei Lin},
+  title        = {Adversarial Text Purification: {A} Large Language Model Approach for
+                  Defense},
+  booktitle    = {Advances in Knowledge Discovery and Data Mining - 28th Pacific-Asia
+                  Conference on Knowledge Discovery and Data Mining, {PAKDD} 2024, Taipei,
+                  Taiwan, May 7-10, 2024, Proceedings, Part {V}},
+  series       = {Lecture Notes in Computer Science},
+  pages        = {65--77},
+  publisher    = {Springer},
+  year         = {2024},
+  url          = {https://doi.org/10.1007/978-981-97-2262-4\_6},
+  doi          = {10.1007/978-981-97-2262-4\_6},
+  timestamp    = {Fri, 28 Feb 2025 17:23:42 +0100},
+  biburl       = {https://dblp.org/rec/conf/pakdd/MoraffahKBL24.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% ---------- Surveys ----------
+
+% [CONFIRMED]
+@article{Goyal2023survey,
+  author       = {Shreya Goyal and
+                  Sumanth Doddapaneni and
+                  Mitesh M. Khapra and
+                  Balaraman Ravindran},
+  title        = {A Survey of Adversarial Defenses and Robustness in {NLP}},
+  journal      = {{ACM} Comput. Surv.},
+  volume       = {55},
+  number       = {14s},
+  pages        = {332:1--332:39},
+  year         = {2023},
+  url          = {https://doi.org/10.1145/3593042},
+  doi          = {10.1145/3593042},
+  timestamp    = {Tue, 22 Oct 2024 21:11:41 +0200},
+  biburl       = {https://dblp.org/rec/journals/csur/GoyalDKR23.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@article{Qiu2022survey,
+  author       = {Shilin Qiu and
+                  Qihe Liu and
+                  Shijie Zhou and
+                  Wen Huang},
+  title        = {Adversarial attack and defense technologies in natural language processing:
+                  {A} survey},
+  journal      = {Neurocomputing},
+  volume       = {492},
+  pages        = {278--307},
+  year         = {2022},
+  url          = {https://doi.org/10.1016/j.neucom.2022.04.020},
+  doi          = {10.1016/J.NEUCOM.2022.04.020},
+  timestamp    = {Thu, 14 Nov 2024 20:23:23 +0100},
+  biburl       = {https://dblp.org/rec/journals/ijon/QiuLZH22.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% ---------- Semantic similarity / scoring ----------
+
+% [CONFIRMED]
+@inproceedings{Sellam2020,
+  author       = {Thibault Sellam and
+                  Dipanjan Das and
+                  Ankur P. Parikh},
+  editor       = {Dan Jurafsky and
+                  Joyce Chai and
+                  Natalie Schluter and
+                  Joel R. Tetreault},
+  title        = {{BLEURT:} Learning Robust Metrics for Text Generation},
+  booktitle    = {Proceedings of the 58th Annual Meeting of the Association for Computational
+                  Linguistics, {ACL} 2020, Online, July 5-10, 2020},
+  pages        = {7881--7892},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2020},
+  url          = {https://doi.org/10.18653/v1/2020.acl-main.704},
+  doi          = {10.18653/V1/2020.ACL-MAIN.704},
+  timestamp    = {Fri, 06 Aug 2021 00:40:55 +0200},
+  biburl       = {https://dblp.org/rec/conf/acl/SellamDP20.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Pu2021,
+  author       = {Amy Pu and
+                  Hyung Won Chung and
+                  Ankur P. Parikh and
+                  Sebastian Gehrmann and
+                  Thibault Sellam},
+  editor       = {Marie{-}Francine Moens and
+                  Xuanjing Huang and
+                  Lucia Specia and
+                  Scott Wen{-}tau Yih},
+  title        = {Learning Compact Metrics for {MT}},
+  booktitle    = {Proceedings of the 2021 Conference on Empirical Methods in Natural
+                  Language Processing, {EMNLP} 2021, Virtual Event / Punta Cana, Dominican
+                  Republic, 7-11 November, 2021},
+  pages        = {751--762},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2021},
+  url          = {https://doi.org/10.18653/v1/2021.emnlp-main.58},
+  doi          = {10.18653/V1/2021.EMNLP-MAIN.58},
+  timestamp    = {Fri, 16 Feb 2024 08:27:36 +0100},
+  biburl       = {https://dblp.org/rec/conf/emnlp/PuCPGS21.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% ---------- BODEGA source corpora ----------
+
+% [CONFIRMED]
+@inproceedings{DaSanMartino2020semeval,
+  author       = {Giovanni Da San Martino and
+                  Alberto Barr{\'{o}}n{-}Cede{\~{n}}o and
+                  Henning Wachsmuth and
+                  Rostislav Petrov and
+                  Preslav Nakov},
+  editor       = {Aur{\'{e}}lie Herbelot and
+                  Xiaodan Zhu and
+                  Alexis Palmer and
+                  Nathan Schneider and
+                  Jonathan May and
+                  Ekaterina Shutova},
+  title        = {SemEval-2020 Task 11: Detection of Propaganda Techniques in News Articles},
+  booktitle    = {Proceedings of the Fourteenth Workshop on Semantic Evaluation, SemEval@COLING
+                  2020, Barcelona (online), December 12-13, 2020},
+  pages        = {1377--1414},
+  publisher    = {International Committee for Computational Linguistics},
+  year         = {2020},
+  url          = {https://doi.org/10.18653/v1/2020.semeval-1.186},
+  doi          = {10.18653/V1/2020.SEMEVAL-1.186},
+  timestamp    = {Mon, 03 Mar 2025 21:21:19 +0100},
+  biburl       = {https://dblp.org/rec/conf/semeval/MartinoBWPN20.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@inproceedings{Thorne2018fever,
+  author       = {James Thorne and
+                  Andreas Vlachos and
+                  Christos Christodoulopoulos and
+                  Arpit Mittal},
+  editor       = {Marilyn A. Walker and
+                  Heng Ji and
+                  Amanda Stent},
+  title        = {{FEVER:} a Large-scale Dataset for Fact Extraction and VERification},
+  booktitle    = {Proceedings of the 2018 Conference of the North American Chapter of
+                  the Association for Computational Linguistics: Human Language Technologies,
+                  {NAACL-HLT} 2018, New Orleans, Louisiana, USA, June 1-6, 2018, Volume
+                  1 (Long Papers)},
+  pages        = {809--819},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2018},
+  url          = {https://doi.org/10.18653/v1/n18-1074},
+  doi          = {10.18653/V1/N18-1074},
+  timestamp    = {Sun, 02 Nov 2025 21:27:23 +0100},
+  biburl       = {https://dblp.org/rec/conf/naacl/ThorneVCM18.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@misc{Kiesel2019hyperpartisan,
+  author       = {Johannes Kiesel and
+                  Maria Mestre and
+                  Rishabh Shukla and
+                  Emmanuel Vincent and
+                  David P. A. Corney and
+                  Payam Adineh and
+                  Benno Stein and
+                  Martin Potthast},
+  title        = {Data for {PAN} at SemEval 2019 Task 4: Hyperpartisan News Detection
+                  (Version 2021-12-13)},
+  publisher    = {Zenodo},
+  year         = {2021},
+  month        = dec,
+  howpublished = {\url{https://doi.org/10.5281/zenodo.5776081}},
+  url          = {https://doi.org/10.5281/zenodo.5776081},
+  doi          = {10.5281/ZENODO.5776081},
+  timestamp    = {Fri, 16 Aug 2024 12:24:01 +0200},
+  biburl       = {https://dblp.org/rec/data/10/KieselMSVCASP21.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+% [CONFIRMED]
+@article{Zubiaga2016rumours,
+  author       = {Arkaitz Zubiaga and
+                  Geraldine Wong Sak Hoi and
+                  Maria Liakata and
+                  Rob Procter and
+                  Peter Tolmie},
+  title        = {Analysing How People Orient to and Spread Rumours in Social Media
+                  by Looking at Conversational Threads},
+  journal      = {CoRR},
+  volume       = {abs/1511.07487},
+  year         = {2015},
+  url          = {http://arxiv.org/abs/1511.07487},
+  eprinttype   = {arXiv},
+  eprint       = {1511.07487},
+  timestamp    = {Mon, 13 Aug 2018 16:45:59 +0200},
+  biburl       = {https://dblp.org/rec/journals/corr/ZubiagaHLPT15.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+
+@inproceedings{Li2021defender,
+    title = "Searching for an Effective Defender: Benchmarking Defense against Adversarial Word Substitution",
+    author = "Li, Zongyi  and
+      Xu, Jianhan  and
+      Zeng, Jiehang  and
+      Li, Linyang  and
+      Zheng, Xiaoqing  and
+      Zhang, Qi  and
+      Chang, Kai-Wei  and
+      Hsieh, Cho-Jui",
+    editor = "Moens, Marie-Francine  and
+      Huang, Xuanjing  and
+      Specia, Lucia  and
+      Yih, Scott Wen-tau",
+    booktitle = "Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing",
+    month = nov,
+    year = "2021",
+    address = "Online and Punta Cana, Dominican Republic",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2021.emnlp-main.251/",
+    doi = "10.18653/v1/2021.emnlp-main.251",
+    pages = "3137--3147",
+    abstract = "Recent studies have shown that deep neural network-based models are vulnerable to intentionally crafted adversarial examples, and various methods have been proposed to defend against adversarial word-substitution attacks for neural NLP models. However, there is a lack of systematic study on comparing different defense approaches under the same attacking setting. In this paper, we seek to fill the gap of systematic studies through comprehensive researches on understanding the behavior of neural text classifiers trained by various defense methods under representative adversarial attacks. In addition, we propose an effective method to further improve the robustness of neural text classifiers against such attacks, and achieved the highest accuracy on both clean and adversarial examples on AGNEWS and IMDB datasets by a significant margin. We hope this study could provide useful clues for future research on text adversarial defense. Codes are available at \url{https://github.com/RockyLzy/TextDefender}."
+}
