@@ -17,10 +17,8 @@ char\_noise@0.1 & 0.142 & 0.148 & 0.100 & 0.163 & -- & 0.138 \\
 \midrule
 MACABEU-off & 0.178 & 0.177 & 0.102 & 0.189 & 0.542 & 0.238 \\
 MACABEU-oracle & \textbf{0.102} & \textbf{0.116} & \textbf{0.060} & \textbf{0.111} & \textbf{0.356} & 0.149 \\
-\midrule
-\textbf{Mean (all defences)} & \textbf{0.247} & \textbf{0.222} & \textbf{0.126} & \textbf{0.226} & \textbf{0.464} & \textbf{0.229} \\
 \bottomrule
 \end{tabular}
-\caption{Mean BODEGA per (defence, attacker), averaged over 4 tasks $\times$ 3 victims. Lower = stronger; best per column in \textbf{bold}. `--' = pair not evaluated. The last row shows the column mean across all defences (a summary of attacker strength across our defence pool). MACABEU-estimated is compared against MACABEU-oracle in Appendix~\ref{sec:appendix-macabeu-variants}.}
+\caption{Mean BODEGA per (defence, attacker), averaged over 4 tasks $\times$ 3 victims. Lower = stronger; best per column in \textbf{bold}. `--' = pair not evaluated. MACABEU-oracle is a theoretical upper bound (it uses the gold label at inference time); its deployment-realistic counterpart, MACABEU-estimated, is compared against it in Appendix~\ref{sec:appendix-macabeu-variants}.}
 \label{tab:results-main}
 \end{table*}
