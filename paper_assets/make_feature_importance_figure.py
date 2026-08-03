@@ -23,9 +23,9 @@ import matplotlib.pyplot as plt
 
 VARIANT_ORDER = ["offline", "oracle", "est_hard"]
 VARIANT_LABELS = {
-    "offline":  "MACABEU-off",
-    "oracle":   "MACABEU-\noracle",
-    "est_hard": "MACABEU-\nestimated",
+    "offline":  "off",
+    "oracle":   "oracle",
+    "est_hard": "estimated",
 }
 
 FEATURE_ORDER = [
@@ -70,12 +70,14 @@ def aggregate(rows, keys):
 
 def draw_heatmap(ax, mat, row_labels, col_labels, title,
                  cmap="Reds", vmin=0.0, vmax=None,
-                 annotate=True):
+                 annotate=True, xtick_rotation=0):
     if vmax is None:
         vmax = float(np.nanmax(mat)) * 1.02 if np.nanmax(mat) > 0 else 1.0
     im = ax.imshow(mat, cmap=cmap, aspect="auto", vmin=vmin, vmax=vmax)
     ax.set_xticks(range(len(col_labels)))
-    ax.set_xticklabels(col_labels, rotation=0, fontsize=8)
+    ha = "right" if xtick_rotation != 0 else "center"
+    ax.set_xticklabels(col_labels, rotation=xtick_rotation,
+                       fontsize=8, ha=ha)
     ax.set_yticks(range(len(row_labels)))
     ax.set_yticklabels(row_labels, fontsize=8)
     if title:
@@ -158,12 +160,15 @@ def main():
         else:
             m, cols = variant_matrix(variant, attackers)
             show_ylabels = False
+        # Attacker labels can be long; rotate to avoid overlap.
+        rot = 0 if variant == "offline" else 30
         im = draw_heatmap(
             ax, m,
             row_labels=[FEATURE_LABELS[f] for f in FEATURE_ORDER] if show_ylabels else [""] * len(FEATURE_ORDER),
             col_labels=cols,
-            title=VARIANT_LABELS[variant].replace("\n", " "),
+            title=("MACABEU-" + VARIANT_LABELS[variant]).replace("\n", " "),
             vmin=0.0, vmax=vmax,
+            xtick_rotation=rot,
         )
         if not show_ylabels:
             ax.set_yticks([])
